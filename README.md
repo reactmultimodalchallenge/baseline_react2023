@@ -143,7 +143,7 @@ then we use a 3D-to-2D [PIRender](https://github.com/RenYurui/PIRender) to rende
 <details><summary> <b> Validation </b>  </summary>
 <p>
  
-- Before validation, run the following to get the martix (defining appropriate neighbours in val set):
+- Before validation, run the following script to get the martix (defining appropriate neighbours in val set):
  ```shell
  cd tool
  python val_matrix.py --dataset-path ./data
@@ -162,6 +162,11 @@ python val.py  --resume xxx/best_checkpoint.pth  --gpu-ids 1  --outdir val_offli
 python val.py  --resume xxx/best_checkpoint.pth  --gpu-ids 1  --outdir val_online --online
 ```
  
+- For computing FID (FRRea), run the following script:
+
+```
+python -m pytorch_fid s./results/val/fid/real ./results/val/fid/fake
+```
 </p>
 </details>
 
