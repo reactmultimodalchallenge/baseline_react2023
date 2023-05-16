@@ -14,3 +14,4 @@ torchaudio==0.9.1
 torchvision==0.10.1+cu111
 tqdm==4.64.1
 tslearn==0.5.3.2
+pytorch-fid
