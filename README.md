@@ -165,7 +165,7 @@ python val.py  --resume xxx/best_checkpoint.pth  --gpu-ids 1  --outdir val_onlin
 - For computing FID (FRRea), run the following script:
 
 ```
-python -m pytorch_fid s./results/val/fid/real ./results/val/fid/fake
+python -m pytorch_fid  ./results/val/fid/real  ./results/val/fid/fake
 ```
 </p>
 </details>
