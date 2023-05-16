@@ -153,19 +153,19 @@ then we use a 3D-to-2D [PIRender](https://github.com/RenYurui/PIRender) to rende
 - Then, evaluate a trained model on val set and run:
 
  ```shell
-python val.py  --resume xxx/best_checkpoint.pth  --gpu-ids 1  --outdir val_offline
+python val.py  --resume ./results/train_offline/best_checkpoint.pth  --gpu-ids 1  --outdir results/val_offline
 ```
  
 &nbsp; or
  
 ```shell
-python val.py  --resume xxx/best_checkpoint.pth  --gpu-ids 1  --outdir val_online --online
+python val.py  --resume ./results/train_online/best_checkpoint.pth  --gpu-ids 1  --online --outdir results/val_online 
 ```
  
 - For computing FID (FRRea), run the following script:
 
 ```
-python -m pytorch_fid  ./results/val/fid/real  ./results/val/fid/fake
+python -m pytorch_fid  ./results/val_offline/fid/real  ./results/val_offline/fid/fake
 ```
 </p>
 </details>
