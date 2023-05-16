@@ -128,8 +128,37 @@ then we use a 3D-to-2D [PIRender](https://github.com/RenYurui/PIRender) to rende
  
 - Running the following shell can start training:
  ```shell
- python train.py --batch-size 8  --gpu_ids 0  -lr 0.00002  -e 50  -j 12  --outdir results/train
+ python train.py --batch-size 8  --gpu_ids 0  -lr 0.00002  -e 50  -j 12  --outdir results/train_offline
  ```
+ or 
+ 
+  ```shell
+ python train.py --batch-size 8  --gpu_ids 0  -lr 0.00002  -e 50  -j 12  --online --outdir results/train_online
+ ```
+ 
+</p>
+</details>
+
+
+<details><summary> <b> Validation </b>  </summary>
+<p>
+ 
+- Before validation, run the following to get the martix (defining appropriate neighbours in val set):
+ ```shell
+ cd tool
+ python val_matrix.py --dataset-path ./data
+ ```
+ Please put files(data_indices.csv, neighbour_emotion_1_7.0921.npy and val.csv) in the folder `./data/`
+ 
+ Then, evaluate a trained model on val set and run:
+```shell
+python val.py  --resume xxx/best_checkpoint.pth  --gpu-ids 1  --outdir val_online --online
+```
+ or
+ ```shell
+python val.py  --resume xxx/best_checkpoint.pth  --gpu-ids 1  --outdir val_offline
+```
+ 
 </p>
 </details>
 
