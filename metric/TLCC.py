@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import multiprocessing as mp
 
 def crosscorr(datax, datay, lag=0, dim=25):
     pcc_list = []
@@ -28,6 +29,24 @@ def compute_TLCC(pred, speaker):
         for i in range(pred_item.shape[0]):
             peak, center, offset = calculate_tlcc(pred_item[i].float(), sp_item.float())
             offset_list.append(torch.abs(offset).item())
+    return torch.mean(torch.Tensor(offset_list)).item()
+
+
+def _func(pred_item, sp_item):
+    for i in range(pred_item.shape[0]):
+        peak, center, offset = calculate_tlcc(pred_item[i].float(), sp_item.float())
+        return torch.abs(offset).item()
+
+def compute_TLCC_mp(pred, speaker, p=8):
+    # pred: N 10 750 25
+    # speaker: N 750 25
+    offset_list = []
+    # process each speaker in parallel
+    np.seterr(divide='ignore', invalid='ignore')
+    
+    with mp.Pool(processes=p) as pool:
+        # use map
+        offset_list += pool.starmap(_func, zip(pred, speaker))
     return torch.mean(torch.Tensor(offset_list)).item()
 
 
