@@ -114,7 +114,7 @@ then we use a 3D-to-2D [PIRender](https://github.com/RenYurui/PIRender) to rende
  
   We provide extracted 3DMM coefficients for downloading at [Google Drive](https://drive.google.com/drive/folders/1RrTytDkkq520qUUAjTuNdmS6tCHQnqFu). 
 
-  We also provide the mean_face and std_face of 3DMM coefficients at [Google Drive](https://drive.google.com/drive/folders/1uVOOJzY3p2XjDESwH4FCjGO8epO7miK4). Please put them at the folder (`external/FaceVerse/`).
+  We also provide the mean_face, std_face and reference_full of 3DMM coefficients at [Google Drive](https://drive.google.com/drive/folders/1uVOOJzY3p2XjDESwH4FCjGO8epO7miK4). Please put them at the folder (`external/FaceVerse/`).
 
  
 - We re-train the PIRender and provide the [checkpoint](https://drive.google.com/drive/folders/1Ys1u0jxVBxrmQZrcrQbm8tagOPNxrTUA). Please put it at the folder (`external/PIRender/`).
