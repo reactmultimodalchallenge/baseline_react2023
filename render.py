@@ -38,7 +38,7 @@ class Render(object):
     def __init__(self, device = 'cpu'):
         self.faceverse, _ = get_faceverse(device=device, img_size=224)
         self.faceverse.init_coeff_tensors()
-        self.id_tensor = torch.from_numpy(np.load('external/reference_full.npy')).float().view(1,-1)[:,:150]
+        self.id_tensor = torch.from_numpy(np.load('external/FaceVerse/reference_full.npy')).float().view(1,-1)[:,:150]
         self.pi_render = FaceGenerator().to(device)
         self.pi_render.eval()
         checkpoint = torch.load('external/PIRender/cur_model_fold.pth')
