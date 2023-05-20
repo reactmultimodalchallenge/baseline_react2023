@@ -26,7 +26,7 @@ This task aims to develop a machine learning model that estimates each frame, ra
 - PyTorch 1.9+
 - CUDA 11.1+ 
 
-### Install Python dependencies (all included in the 'requirements.txt')
+### Install Python dependencies (all included in 'requirements.txt')
 
 ```shell
 conda create -n react python=3.8
@@ -106,20 +106,20 @@ data
 <details><summary> <b> External Tool Preparation </b> </summary>
 <p>
 
-In this baseline, we leverage [3DMM model](https://github.com/LizhenWangT/FaceVerse) to extract 3DMM coefficients and render the 3D listener and 
+The baselines leverage [3DMM model](https://github.com/LizhenWangT/FaceVerse) to extract 3DMM coefficients, and render 3D facial reactions.  
 
-then we use a 3D-to-2D [PIRender](https://github.com/RenYurui/PIRender) to render final 2D frames of listener.
+Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to render final 2D facial reaction frames.
    
-- If you use our prepared 3DMM coefficients, you need to download the FaceVerse version 2 model at this [page](https://github.com/LizhenWangT/FaceVerse) 
+- You can alternatively use 3DMM coefficients prepared by us by downloading the FaceVerse version 2 model at this [page](https://github.com/LizhenWangT/FaceVerse) 
  
-  and put in the folder (`external/FaceVerse/data/`).
+  and put it in the folder (`external/FaceVerse/data/`).
  
   We provide extracted 3DMM coefficients for downloading at [Google Drive](https://drive.google.com/drive/folders/1RrTytDkkq520qUUAjTuNdmS6tCHQnqFu). 
 
-  We also provide the mean_face, std_face and reference_full of 3DMM coefficients at [Google Drive](https://drive.google.com/drive/folders/1uVOOJzY3p2XjDESwH4FCjGO8epO7miK4). Please put them at the folder (`external/FaceVerse/`).
+  We also provide the mean_face, std_face and reference_full of 3DMM coefficients at [Google Drive](https://drive.google.com/drive/folders/1uVOOJzY3p2XjDESwH4FCjGO8epO7miK4). Please put them in the folder (`external/FaceVerse/`).
 
  
-- We re-train the PIRender and provide the [checkpoint](https://drive.google.com/drive/folders/1Ys1u0jxVBxrmQZrcrQbm8tagOPNxrTUA). Please put it at the folder (`external/PIRender/`).
+- We re-trained the PIRender and the well-trained model is provided at the [checkpoint](https://drive.google.com/drive/folders/1Ys1u0jxVBxrmQZrcrQbm8tagOPNxrTUA). Please put it in the folder (`external/PIRender/`).
    
 </p>
 </details>
