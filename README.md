@@ -31,6 +31,8 @@ This task aims to develop a machine learning model that estimates each frame, ra
 ```shell
 conda create -n react python=3.8
 conda activate react
+pip install git+https://github.com/facebookresearch/pytorch3d.git
+pip install torch==1.9.1+cu111 torchvision==0.10.1+cu111 torchaudio==0.9.1 -f https://download.pytorch.org/whl/torch_stable.html
 pip install -r requirements.txt
 ```
 
