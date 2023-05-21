@@ -73,21 +73,59 @@ def concordance_correlation_coefficient(y_true, y_pred,
 
 
 def compute_FRC(args, pred, em, val_test='val'):
-    FRC_list = []
+    pred = pred
+    em = em
     if val_test == 'val':
         neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_val.npy'))
     else:
         neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_test.npy'))
-    for k in range(pred.shape[0]):
-        neighbour_index = np.argwhere(neighbour_matrix[k] == 1).reshape(-1)
-        neighbour_index_len = len(neighbour_index)
+
+    all_FRC_list = []
+    for i in range(pred.shape[1]):
+        FRC_list = []
+        for k in range(pred.shape[0]):
+            neighbour_index = np.argwhere(neighbour_matrix[k] == 1).reshape(-1)
+            neighbour_index_len = len(neighbour_index)
+            ccc_list = []
+            for n_index in range(neighbour_index_len):
+                emotion = em[neighbour_index[n_index]]
+                ccc = concordance_correlation_coefficient(emotion.numpy(), pred[k,i].numpy())
+                ccc_list.append(ccc)
+            max_ccc = max(ccc_list)
+            FRC_list.append(max_ccc)
+        all_FRC_list.append(np.mean(FRC_list))
+    return sum(all_FRC_list)
+
+
+
+def _func(k_neighbour_matrix, k_pred, em=None):
+    neighbour_index = np.argwhere(k_neighbour_matrix == 1).reshape(-1)
+    neighbour_index_len = len(neighbour_index)
+    max_ccc_sum = 0
+    for i in range(k_pred.shape[0]):
         ccc_list = []
         for n_index in range(neighbour_index_len):
             emotion = em[neighbour_index[n_index]]
-            ccc = concordance_correlation_coefficient(emotion.numpy().astype(np.float32), pred[k].numpy().astype(np.float32))
+            ccc = concordance_correlation_coefficient(emotion.numpy(), k_pred[i].numpy())
             ccc_list.append(ccc)
-        max_ccc = max(ccc_list)
-        FRC_list.append(max_ccc)
-    return np.mean(FRC_list)
+        max_ccc_sum += max(ccc_list)
+    return max_ccc_sum
 
+
+
+def compute_FRC_mp(args, pred, em, val_test='val', p=4):
+    # pred: N 10 750 25
+    # speaker: N 750 25
+
+    if val_test == 'val':
+        neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_val.npy'))
+    else:
+        neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_test.npy'))
+
+    FRC_list = []
+    with mp.Pool(processes=p) as pool:
+        # use map
+        _func_partial = partial(_func, em=em)
+        FRC_list += pool.starmap(_func_partial, zip(neighbour_matrix, pred))
+    return np.mean(FRC_list)
 
