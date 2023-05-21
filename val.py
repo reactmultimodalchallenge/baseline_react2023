@@ -92,17 +92,17 @@ def val(args, model, val_loader, criterion, render):
         for batch_idx, (speaker_video_clip, speaker_audio_clip, _, _, _, _, _) in enumerate(tqdm(val_loader)):
             if torch.cuda.is_available():
                 speaker_video_clip, speaker_audio_clip = \
-                    speaker_video_clip.cuda(), speaker_audio_clip.cuda()
+                    speaker_video_clip[:,:750].cuda(), speaker_audio_clip[:,:750].cuda()
             with torch.no_grad():
                 _, listener_emotion_outs, _ = model(speaker_video_clip, speaker_audio_clip)
-                listener_emotion_list.append(listener_emotion_outs.cpu())
+                listener_emotion_list.append(listener_emotion_outs[:,:750].cpu())
         listener_emotion = torch.cat(listener_emotion_list, dim=0)
         all_listener_emotion_list.append(listener_emotion.unsqueeze(1))
     all_listener_emotion = torch.cat(all_listener_emotion_list, dim=1)
 
     print("-----------------Evaluating Metric-----------------")
-    FRC = compute_FRC(args, all_listener_emotion[:,0], speaker_emotion)
-    FRD = compute_FRD(args, all_listener_emotion[:,0], speaker_emotion)
+    FRC = compute_FRC_mp(args, all_listener_emotion, listener_emotion)
+    FRD = compute_FRD_mp(args, all_listener_emotion, listener_emotion)
     FRDvs = compute_FRDvs(all_listener_emotion)
     FRVar  = compute_FRVar(all_listener_emotion)
     smse  = compute_s_mse(all_listener_emotion)
