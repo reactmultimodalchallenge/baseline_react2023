@@ -4,6 +4,7 @@ from tslearn.metrics import dtw
 from functools import partial
 import multiprocessing as mp
 
+
 def compute_FRD(args, pred, em, val_test='val'):
     if val_test == 'val':
         neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_val.npy'))
@@ -44,7 +45,7 @@ def _func(k_neighbour_matrix, k_pred, em=None):
     return min_dwt_sum
 
 
-def compute_FRD_mp(args, pred, em, val_test='val', p=8):
+def compute_FRD_mp(args, pred, em, val_test='val', p=4):
     # pred: N 10 750 25
     # speaker: N 750 25
 
