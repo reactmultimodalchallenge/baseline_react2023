@@ -221,8 +221,6 @@ class TrainValDataset(data.Dataset):
         return self._len
 
 
-
-
 class ValDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
     def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=30):
@@ -338,20 +336,20 @@ class ValDataset(data.Dataset):
 
     def __len__(self):
         return self._len
-
-
+    
+    
 
 class TestDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 750, fps=30):
+    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=30):
         """sign: train, val, test"""
 
         self._root_path = root_path
         self._img_loader = pil_loader
-        self._train = train
         self._clip_length = clip_length
         self._fps = fps
-        self._data_path = os.path.join(root_path)
+
+        self._data_path = os.path.join(root_path, 'test')
         self._list_path = pd.read_csv(os.path.join(self._root_path, 'test.csv'), header=None, delimiter=',')
 
         self._audio_path = os.path.join(self._data_path, 'Audio_files')
@@ -368,8 +366,7 @@ class TestDataset(data.Dataset):
         self.std_face = torch.FloatTensor(
             np.load('external/FaceVerse/std_face.npy').astype(np.float32)).view(1, 1, -1)
 
-        self._transform_3dmm = transforms.Lambda(lambda e: (e - self.mean_face))
-
+        self._transform_3dmm = transforms.Lambda(lambda e: (e - self.mean_face) )
 
         speaker_path = list(self._list_path.values[:, 1])
         listener_path = list(self._list_path.values[:, 2])
@@ -404,15 +401,14 @@ class TestDataset(data.Dataset):
 
         data = self.data_list[index]
 
+
         speaker_video_path = data['speaker_video_path']
         listener_video_path = data['listener_video_path']
 
-        listener_audio_path = data['listener_audio_path']
         speaker_audio_path =  data['speaker_audio_path']
         speaker_emotion_path = data['speaker_emotion_path']
         listener_emotion_path = data['listener_emotion_path']
 
-        speaker_3dmm_path = data['speaker_3dmm_path']
         listener_3dmm_path = data['listener_3dmm_path']
 
 
@@ -421,7 +417,6 @@ class TestDataset(data.Dataset):
         img_paths = os.listdir(speaker_video_path)
         total_length = len(img_paths)
         img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-
 
         for img_path in img_paths:
             img = self._img_loader(os.path.join(speaker_video_path, img_path))
@@ -434,16 +429,28 @@ class TestDataset(data.Dataset):
         listener_reference = self._img_loader(os.path.join(listener_video_path, img_paths[0]))
         listener_reference = self._transform(listener_reference)
 
+        clip = []
+        for img_path in img_paths:
+            img = self._img_loader(os.path.join(listener_video_path, img_path))
+            img = self._transform(img)
+            clip.append(img.unsqueeze(0))
+        listener_video_clip = torch.cat(clip, dim=0)
+
+
         # listener 3dmm clip
         listener_3dmm = torch.FloatTensor(np.load(listener_3dmm_path)).squeeze()
         listener_3dmm = self._transform_3dmm(listener_3dmm)[0]
 
         speaker_audio_clip = extract_audio_features(speaker_audio_path, self._fps, total_length)
 
+        speaker_emotion = pd.read_csv(speaker_emotion_path, header=None, delimiter=',')
+        speaker_emotion = torch.from_numpy(np.array(speaker_emotion.drop(0)).astype(np.float32))
+
+
         listener_emotion = pd.read_csv(listener_emotion_path, header=None, delimiter=',')
         listener_emotion = torch.from_numpy(np.array(listener_emotion.drop(0)).astype(np.float32))
 
-        return speaker_video_clip, speaker_audio_clip, listener_emotion, listener_3dmm, listener_reference
+        return speaker_video_clip, speaker_audio_clip, speaker_emotion, listener_video_clip, listener_emotion, listener_3dmm, listener_reference
 
     def __len__(self):
         return self._len
