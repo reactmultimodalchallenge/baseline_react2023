@@ -454,8 +454,3 @@ class TestDataset(data.Dataset):
 
     def __len__(self):
         return self._len
-
-
-
-if __name__ == "__main__":
-    # data:
