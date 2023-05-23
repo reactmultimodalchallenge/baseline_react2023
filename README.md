@@ -103,12 +103,15 @@ data
        ├── UDIVA
             
 ```
-</p>
-</details>
-
+ 
 - The task is to predict one role's reaction ('Expert' or 'Novice',  'P25' or 'P26'....) to the other ('Novice' or 'Expert',  'P26' or 'P25'....).
 - 3D_FV_files involve extracted 3DMM coefficients (including expression (52 dim), angle (3 dim) and translation (3 dim) coefficients.
 - The frame rate of processed videos in each site is 25 (fps = 25), height = 256, width = 256. And each video clip has 751 frames. 
+ 
+ 
+</p>
+</details>
+
 
 
 <details><summary> <b> External Tool Preparation </b> </summary>
