@@ -132,12 +132,12 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
  
 - Running the following shell can start training:
  ```shell
- python train.py --batch-size 8  --gpu_ids 0  -lr 0.00002  -e 50  -j 12  --outdir results/train_offline
+ python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --outdir results/train_offline
  ```
  &nbsp; or 
  
   ```shell
- python train.py --batch-size 8  --gpu_ids 0  -lr 0.00002  -e 50  -j 12  --online --outdir results/train_online
+ python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --online --outdir results/train_online
  ```
  
 </p>
