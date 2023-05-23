@@ -94,7 +94,7 @@ def extract_audio_features(audio_path, fps, n_frames):
 
 class TrainValDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, train=True, img_size = 256, crop_size = 224, clip_length = 256, fps=30):
+    def __init__(self, root_path, train=True, img_size = 256, crop_size = 224, clip_length = 256, fps=25):
         """sign: train, val, test"""
 
         self._root_path = root_path
@@ -223,7 +223,7 @@ class TrainValDataset(data.Dataset):
 
 class ValDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=30):
+    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=25):
         """sign: train, val, test"""
 
         self._root_path = root_path
@@ -341,7 +341,7 @@ class ValDataset(data.Dataset):
 
 class TestDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=30):
+    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=25):
         """sign: train, val, test"""
 
         self._root_path = root_path
