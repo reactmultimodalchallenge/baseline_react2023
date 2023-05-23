@@ -72,32 +72,6 @@ def concordance_correlation_coefficient(y_true, y_pred,
     return ccc
 
 
-def compute_FRC(args, pred, em, val_test='val'):
-    pred = pred
-    em = em
-    if val_test == 'val':
-        neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_val.npy'))
-    else:
-        neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_test.npy'))
-
-    all_FRC_list = []
-    for i in range(pred.shape[1]):
-        FRC_list = []
-        for k in range(pred.shape[0]):
-            neighbour_index = np.argwhere(neighbour_matrix[k] == 1).reshape(-1)
-            neighbour_index_len = len(neighbour_index)
-            ccc_list = []
-            for n_index in range(neighbour_index_len):
-                emotion = em[neighbour_index[n_index]]
-                ccc = concordance_correlation_coefficient(emotion.numpy(), pred[k,i].numpy())
-                ccc_list.append(ccc)
-            max_ccc = max(ccc_list)
-            FRC_list.append(max_ccc)
-        all_FRC_list.append(np.mean(FRC_list))
-    return sum(all_FRC_list)
-
-
-
 def _func(k_neighbour_matrix, k_pred, em=None):
     neighbour_index = np.argwhere(k_neighbour_matrix == 1).reshape(-1)
     neighbour_index_len = len(neighbour_index)
