@@ -48,6 +48,8 @@ pip install -r requirements.txt
 - Participants can apply for the data at our [Homepage](https://sites.google.com/cam.ac.uk/react2023/home).
    
 **Data organization (`data/`) is listed below:**
+```data/partition/modality/site/chat_index/person_index/clip_index/actual_data_files```
+The example of data structure.
 ```
 data
 ├── test
@@ -104,10 +106,16 @@ data
 </p>
 </details>
 
+- The task is to predict one role's reaction ('Expert' or 'Novice',  'P25' or 'P26'....) to the other ('Novice' or 'Expert',  'P26' or 'P25'....).
+- 3D_FV_files involve extracted 3DMM coefficients (including expression (52 dim), angle (3 dim) and translation (3 dim) coefficients.
+- The frame rate of processed videos in each site is 25 (fps = 25), height = 256, width = 256. And each video clip has 751 frames. 
+
 
 <details><summary> <b> External Tool Preparation </b> </summary>
 <p>
 
+We use 3DMM coefficients to represent a 3D listener or speaker, and for further 3D-to-2D frame rendering. 
+ 
 The baselines leverage [3DMM model](https://github.com/LizhenWangT/FaceVerse) to extract 3DMM coefficients, and render 3D facial reactions.  
 
 - You should first download 3DMM (FaceVerse version 2 model) at this [page](https://github.com/LizhenWangT/FaceVerse) 
