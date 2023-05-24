@@ -7,6 +7,7 @@ import os
 def parse_arg():
     parser = argparse.ArgumentParser(description='PyTorch Training')
     parser.add_argument('--dataset-path', default="/home/luocheng/Datasets/S-L", type=str, help="dataset path")
+    parser.add_argument('--partition', default="val", type=str, help="dataset partition")
     args = parser.parse_args()
     return args
 
@@ -14,12 +15,12 @@ args = parse_arg()
 root_path = args.dataset_path
 data_path = pd.read_csv(os.path.join(root_path, 'data_indices.csv'), header=None, delimiter=',')
 data_path = data_path.drop(0)
-all_matrix = np.load(os.path.join(root_path, 'neighbour_emotion_1_7.0921.npy'))
+all_matrix = np.load(os.path.join(root_path, 'Approprirate_facial_reaction.npy'))
 
 all_matrix_w = all_matrix.shape[0]
 print("all_matrix shape:", all_matrix.shape)
 
-val_path = pd.read_csv(os.path.join(root_path, 'val.csv'), header=None, delimiter=',')
+val_path = pd.read_csv(os.path.join(root_path, str(args.partition)+'.csv'), header=None, delimiter=',')
 val_path = val_path.drop(0)
 
 index_list = []
@@ -50,5 +51,5 @@ for index, item in enumerate(index_list):
         new_matrix[index+l_m, j+l_m] = all_matrix[item + all_matrix_w//2, item_j + all_matrix_w//2]
 
 
-np.save(os.path.join(root_path, 'neighbour_emotion_val.npy'), new_matrix)
+np.save(os.path.join(root_path, 'neighbour_emotion_' + str(args.partition) + '.npy'), new_matrix)
 print(new_matrix.shape)
