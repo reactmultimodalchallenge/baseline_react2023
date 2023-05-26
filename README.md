@@ -108,8 +108,8 @@ data
  
 - The task is to predict one role's reaction ('Expert' or 'Novice',  'P25' or 'P26'....) to the other ('Novice' or 'Expert',  'P26' or 'P25'....).
 - 3D_FV_files involve extracted 3DMM coefficients (including expression (52 dim), angle (3 dim) and translation (3 dim) coefficients.
-- The frame rate of processed videos in each site is 25 (fps = 25), height = 256, width = 256. And each video clip has 751 frames. 
-- The csv files for baseline training and validation dataloader are now avaliable at '/tool/train.csv' and '/tool/val.csv'
+- The frame rate of processed videos in each site is 25 (fps = 25), height = 256, width = 256. And each video clip has 751 frames (about 30s), The samping rate of audio files is 44100. 
+- The csv files for baseline training and validation dataloader are now avaliable at 'data/train.csv' and 'data/val.csv'
  
  
 </p>
