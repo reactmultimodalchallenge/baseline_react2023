@@ -96,7 +96,7 @@ def extract_audio_features(audio_path, fps, n_frames):
 class ReactionDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
     def __init__(self, root_path, split, img_size = 256, crop_size = 224, clip_length = 751, fps=30, 
-                 load_audio=True, load_video=True, load_emotion=True, load_3dmm=True, load_ref=True,
+                 load_audio=True, load_video_s=True, load_video_l=True, load_emotion=True, load_3dmm=True, load_ref=True,
                  repeat_mirrored=True):
         """
         Args:
@@ -107,7 +107,8 @@ class ReactionDataset(data.Dataset):
             clip_length: (int) Number of frames in a clip.
             fps: (int) Frame rate of the video.
             load_audio: (bool) Whether to load audio features.
-            load_video: (bool) Whether to load video features.
+            load_video_s: (bool) Whether to load speaker video features.
+            load_video_l: (bool) Whether to load listener video features.
             load_emotion: (bool) Whether to load emotion labels.
             load_3dmm: (bool) Whether to load 3DMM parameters.
             repeat_mirrored: (bool) Whether to extend dataset with mirrored speaker/listener. This is used for val/test.
@@ -124,7 +125,8 @@ class ReactionDataset(data.Dataset):
         self._list_path = self._list_path.drop(0)
 
         self.load_audio = load_audio
-        self.load_video = load_video
+        self.load_video_s = load_video_s
+        self.load_video_l = load_video_l
         self.load_emotion = load_emotion
         self.load_3dmm = load_3dmm
         self.load_ref = load_ref
@@ -188,7 +190,7 @@ class ReactionDataset(data.Dataset):
         speaker_video_path = data[f'{listener_prefix}_video_path']
         listener_video_path = data[f'{speaker_prefix}_video_path']
 
-        if self.load_video or self.load_ref: # otherwise, no need to compute these image paths
+        if self.load_video_s or self.load_video_l or self.load_ref: # otherwise, no need to compute these image paths
             img_paths = os.listdir(speaker_video_path)
             total_length = len(img_paths)
             img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
@@ -196,7 +198,7 @@ class ReactionDataset(data.Dataset):
             img_paths = img_paths[cp: cp + self._clip_length]
 
         speaker_video_clip = 0
-        if self.load_video:
+        if self.load_video_s:
             clip = []
             for img_path in img_paths:
                 img = self._img_loader(os.path.join(speaker_video_path, img_path))
@@ -205,9 +207,9 @@ class ReactionDataset(data.Dataset):
             speaker_video_clip = torch.cat(clip, dim=0)
             speaker_video_clip = speaker_video_clip[cp:cp + self._clip_length]
         
-        # listener video clip only needed for test
+        # listener video clip only needed for val/test
         listener_video_clip = 0
-        if self.load_video and self._split in ['test']:
+        if self.load_video_l:
             clip = []
             for img_path in img_paths:
                 img = self._img_loader(os.path.join(listener_video_path, img_path))
@@ -216,7 +218,7 @@ class ReactionDataset(data.Dataset):
             listener_video_clip = torch.cat(clip, dim=0)
             listener_video_clip = listener_video_clip[cp:cp + self._clip_length]
 
-        # ========================= Load Speaker audio clip (listener is never needed) ==========================
+        # ========================= Load Speaker audio clip (listener audio is NEVER needed) ==========================
         listener_audio_clip, speaker_audio_clip = 0, 0
         if self.load_audio:
             speaker_audio_path = data[f'{listener_prefix}_audio_path']
@@ -257,11 +259,11 @@ class ReactionDataset(data.Dataset):
 
 
 
-def get_dataloader(conf, split, load_audio=True, load_video=True, load_emotion=True, load_3dmm=True, load_ref=True):
+def get_dataloader(conf, split, load_audio=True, load_video_s=True, load_video_l=True, load_emotion=True, load_3dmm=True, load_ref=True):
     assert split in ["train", "val", "test"], "split must be in [train, val, test]"
     #print('==> Preparing data for {}...'.format(split) + '\n')
     dataset = ReactionDataset(conf.dataset_path, split, img_size = conf.img_size, crop_size = conf.crop_size, clip_length = conf.seq_len,
-                              load_audio=load_audio, load_video=load_video, load_emotion=load_emotion, load_3dmm=load_3dmm, load_ref=load_ref)
+                              load_audio=load_audio, load_video_s=load_video_s, load_video_l=load_video_l, load_emotion=load_emotion, load_3dmm=load_3dmm, load_ref=load_ref)
     shuffle = True if split == "train" else False
     dataloader = DataLoader(dataset=dataset, batch_size=conf.batch_size, shuffle=shuffle, num_workers=conf.num_workers)
     return dataloader

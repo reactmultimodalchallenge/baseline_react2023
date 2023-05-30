@@ -36,7 +36,7 @@ def get_baseline(cfg, baseline, num_pred=10, speaker_emotion=None, listener_emot
         # This baseline predicts the sequence/frame mean of the training data for each emotion dimension.
         global training_mean, training_mean_single
         if training_mean is None or training_mean_single is None:
-            train_loader = get_dataloader(cfg, "train", load_audio=False, load_video=False, load_3dmm=False, load_ref=False)
+            train_loader = get_dataloader(cfg, "train", load_audio=False, load_video_s=False, load_video_l=False, load_3dmm=False, load_ref=False)
             train_loader._split = "val" # to avoid data augmentation
             all_tr_emotion_list = []
             for batch_idx, (_, _, speaker_emotion, _, _, listener_emotion, _, _) in enumerate(tqdm(train_loader)):
@@ -68,7 +68,7 @@ def get_baseline(cfg, baseline, num_pred=10, speaker_emotion=None, listener_emot
 # Train
 def val(cfg):
     assert cfg.split in ["val", "test"], "split must be in [val, test]"
-    dataloader = get_dataloader(cfg, cfg.split, load_audio=False, load_video=False, load_3dmm=False, load_ref=False)
+    dataloader = get_dataloader(cfg, cfg.split, load_audio=False, load_video_s=False, load_video_l=False, load_3dmm=False, load_ref=False)
 
     for i, baseline in enumerate(baselines):
 

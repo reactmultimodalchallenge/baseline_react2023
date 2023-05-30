@@ -111,8 +111,8 @@ def val(args, model, val_loader, criterion, render, epoch):
 def main(args):
     start_epoch = 0
     lowest_val_loss = 10000
-    train_loader = get_dataloader(args, "train")
-    val_loader = get_dataloader(args, "val")
+    train_loader = get_dataloader(args, "train", load_ref=False, load_video_l=False)
+    val_loader = get_dataloader(args, "val", load_video_l=False)
     model = TransformerVAE(img_size = args.img_size, audio_dim = args.audio_dim,  output_3dmm_dim = 58, output_emotion_dim = 25, feature_dim = args.feature_dim, seq_len = args.seq_len, online = args.online, window_size = args.window_size, device = args.device)
     criterion = VAELoss(args.kl_p)
 
