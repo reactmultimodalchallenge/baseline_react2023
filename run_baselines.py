@@ -110,7 +110,7 @@ def val(cfg):
                                                                                               TLCC))
 
         # latex friendly. FRC, FRD, TLCC with 2 decimals, FRDvs, FRVar, smse with 4 decimals. Split by columns in a table
-        print("B\\_{} & {:.2f} & {:.2f} & {:.4f} & {:.4f} & {:.4f} & - & {:.2f} \\\\".format(baseline, FRC, FRD, smse, FRVar, FRDvs, TLCC))
+        print("Latex-friendly --> B\\_{} & {:.2f} & {:.2f} & {:.4f} & {:.4f} & {:.4f} & - & {:.2f} \\\\".format(baseline, FRC, FRD, smse, FRVar, FRDvs, TLCC))
 
 
 def main():

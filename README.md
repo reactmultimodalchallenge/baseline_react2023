@@ -221,6 +221,17 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
 </p>
 </details>
 
+<details><summary> <b> Other baselines </b>  </summary>
+<p>
+ 
+- Run the following script to sequentially evaluate the naive baselines presented in the paper:
+ ```shell
+ python run_baselines.py --split SPLIT
+ ```
+ SPLIT can be `val` or `test`.
+</p>
+</details>
+
 
 
 ## 🖊️ Citation
