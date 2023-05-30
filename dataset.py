@@ -95,7 +95,7 @@ def extract_audio_features(audio_path, fps, n_frames):
 
 class ReactionDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, split, img_size = 256, crop_size = 224, clip_length = 751, fps=30, 
+    def __init__(self, root_path, split, img_size = 256, crop_size = 224, clip_length = 751, fps=25, 
                  load_audio=True, load_video_s=True, load_video_l=True, load_emotion=True, load_3dmm=True, load_ref=True,
                  repeat_mirrored=True):
         """
