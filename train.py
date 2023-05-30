@@ -7,16 +7,17 @@ import torch.optim as optim
 import argparse
 from tqdm import tqdm
 import logging
-from dataset import TrainValDataset
+from dataset import ReactionDataset
 from model import TransformerVAE
 from utils import AverageMeter
 from render import Render
 from model.losses import VAELoss
+from dataset import get_dataloader
 
 def parse_arg():
     parser = argparse.ArgumentParser(description='PyTorch Training')
     # Param
-    parser.add_argument('--dataset-path', default="/home/luocheng/Datasets/S-L", type=str, help="dataset path")
+    parser.add_argument('--dataset-path', default="./data", type=str, help="dataset path")
     parser.add_argument('--resume', default="", type=str, help="checkpoint path")
     parser.add_argument('-b', '--batch-size', default=4, type=int, metavar='N', help='mini-batch size (default: 4)')
     parser.add_argument('-lr', '--learning-rate', default=0.0001, type=float, metavar='LR',
@@ -45,14 +46,6 @@ def parse_arg():
     args = parser.parse_args()
     return args
 
-def get_dataloader(conf):
-    print('==> Preparing data...')
-    train_data = TrainValDataset(conf.dataset_path, train=True, img_size = conf.img_size, crop_size = conf.crop_size)
-    train_loader = DataLoader(dataset=train_data, batch_size=conf.batch_size, shuffle=True, num_workers=conf.num_workers)
-    val_data = TrainValDataset(conf.dataset_path, train=False, img_size = conf.img_size, crop_size = conf.crop_size)
-    val_loader = DataLoader(dataset=val_data, batch_size=conf.batch_size, shuffle=False, num_workers=conf.num_workers)
-    return train_loader, len(train_data), val_loader, len(val_data)
-
 
 # Train
 def train(model, train_loader, optimizer, criterion):
@@ -61,10 +54,10 @@ def train(model, train_loader, optimizer, criterion):
     kld_losses = AverageMeter()
 
     model.train()
-    for batch_idx, (speaker_video_clip, speaker_audio_clip, listener_emotion, listener_3dmm, _) in enumerate(tqdm(train_loader)):
+    for batch_idx, (speaker_video_clip, speaker_audio_clip, _, _, _, listener_emotion, listener_3dmm, _) in enumerate(tqdm(train_loader)):
         if torch.cuda.is_available():
             speaker_video_clip, speaker_audio_clip, listener_emotion, listener_3dmm = \
-                speaker_video_clip.cuda(), speaker_audio_clip.cuda(), listener_emotion.cuda(), listener_3dmm.cuda()
+                speaker_video_clip[:,:750].cuda(), speaker_audio_clip[:,:750].cuda(), listener_emotion[:,:750].cuda(), listener_3dmm[:,:750].cuda()
 
         optimizer.zero_grad()
         listener_3dmm_out, listener_emotion_out, distribution = model(speaker_video_clip, speaker_audio_clip)
@@ -88,10 +81,10 @@ def val(args, model, val_loader, criterion, render, epoch):
     rec_losses = AverageMeter()
     kld_losses = AverageMeter()
     model.eval()
-    for batch_idx, (speaker_video_clip, speaker_audio_clip, listener_emotion, listener_3dmm, listener_references) in enumerate(tqdm(val_loader)):
+    for batch_idx, (speaker_video_clip, speaker_audio_clip, _, _, _, listener_emotion, listener_3dmm, listener_references) in enumerate(tqdm(val_loader)):
         if torch.cuda.is_available():
             speaker_video_clip, speaker_audio_clip, listener_emotion, listener_3dmm, listener_references = \
-                speaker_video_clip.cuda(), speaker_audio_clip.cuda(), listener_emotion.cuda(), listener_3dmm.cuda(), listener_references.cuda()
+                speaker_video_clip[:,:750].cuda(), speaker_audio_clip[:,:750].cuda(), listener_emotion[:,:750].cuda(), listener_3dmm[:,:750].cuda(), listener_references[:,:750].cuda()
 
         with torch.no_grad():
             listener_3dmm_out, listener_emotion_out, distribution = model(speaker_video_clip, speaker_audio_clip)
@@ -118,7 +111,8 @@ def val(args, model, val_loader, criterion, render, epoch):
 def main(args):
     start_epoch = 0
     lowest_val_loss = 10000
-    train_loader, train_data_num, val_loader, val_data_num = get_dataloader(args)
+    train_loader = get_dataloader(args, "train")
+    val_loader = get_dataloader(args, "val")
     model = TransformerVAE(img_size = args.img_size, audio_dim = args.audio_dim,  output_3dmm_dim = 58, output_emotion_dim = 25, feature_dim = args.feature_dim, seq_len = args.seq_len, online = args.online, window_size = args.window_size, device = args.device)
     criterion = VAELoss(args.kl_p)
 

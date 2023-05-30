@@ -171,13 +171,13 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
 - Then, evaluate a trained model on val set and run:
 
  ```shell
-python val.py  --resume ./results/train_offline/best_checkpoint.pth  --gpu-ids 1  --outdir results/val_offline
+python evaluate.py  --resume ./results/train_offline/best_checkpoint.pth  --gpu-ids 1  --outdir results/val_offline --split val
 ```
  
 &nbsp; or
  
 ```shell
-python val.py  --resume ./results/train_online/best_checkpoint.pth  --gpu-ids 1  --online --outdir results/val_online 
+python evaluate.py  --resume ./results/train_online/best_checkpoint.pth  --gpu-ids 1  --online --outdir results/val_online --split val
 ```
  
 - For computing FID (FRRea), run the following script:
@@ -204,13 +204,13 @@ python -m pytorch_fid  ./results/val_offline/fid/real  ./results/val_offline/fid
 - Then, evaluate a trained model on val set and run:
 
  ```shell
-python test.py  --resume ./results/train_offline/best_checkpoint.pth  --gpu-ids 1  --outdir results/test_offline
+python evaluate.py  --resume ./results/train_offline/best_checkpoint.pth  --gpu-ids 1  --outdir results/test_offline --split test
 ```
  
 &nbsp; or
  
 ```shell
-python test.py  --resume ./results/train_online/best_checkpoint.pth  --gpu-ids 1  --online --outdir results/test_online 
+python evaluate.py  --resume ./results/train_online/best_checkpoint.pth  --gpu-ids 1  --online --outdir results/test_online --split test
 ```
  
 - For computing FID (FRRea), run the following script:

@@ -12,6 +12,7 @@ import pandas as pd
 from PIL import Image
 import soundfile as sf
 import cv2
+from torch.utils.data import DataLoader
 
 # import librosa
 from multiprocessing import Pool
@@ -92,46 +93,66 @@ def extract_audio_features(audio_path, fps, n_frames):
 
 
 
-class TrainValDataset(data.Dataset):
+class ReactionDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, train=True, img_size = 256, crop_size = 224, clip_length = 256, fps=30):
-        """sign: train, val, test"""
+    def __init__(self, root_path, split, img_size = 256, crop_size = 224, clip_length = 751, fps=30, 
+                 load_audio=True, load_video=True, load_emotion=True, load_3dmm=True, load_ref=True,
+                 repeat_mirrored=True):
+        """
+        Args:
+            root_path: (str) Path to the data folder.
+            split: (str) 'train' or 'val' or 'test' split.
+            img_size: (int) Size of the image.
+            crop_size: (int) Size of the crop.
+            clip_length: (int) Number of frames in a clip.
+            fps: (int) Frame rate of the video.
+            load_audio: (bool) Whether to load audio features.
+            load_video: (bool) Whether to load video features.
+            load_emotion: (bool) Whether to load emotion labels.
+            load_3dmm: (bool) Whether to load 3DMM parameters.
+            repeat_mirrored: (bool) Whether to extend dataset with mirrored speaker/listener. This is used for val/test.
+        """
 
         self._root_path = root_path
         self._img_loader = pil_loader
-        self._train = train
         self._clip_length = clip_length
         self._fps = fps
+        self._split = split
+        
+        self._data_path = os.path.join(self._root_path, self._split)
+        self._list_path = pd.read_csv(os.path.join(self._root_path, self._split + '.csv'), header=None, delimiter=',')
+        self._list_path = self._list_path.drop(0)
 
-        if train:
-            self._data_path = os.path.join(root_path, 'train')
-            self._list_path = pd.read_csv(os.path.join(self._root_path, 'train.csv'), header=None, delimiter=',')
-        else:
-            self._data_path = os.path.join(root_path, 'val')
-            self._list_path = pd.read_csv(os.path.join(self._root_path, 'val.csv'), header=None, delimiter=',')
+        self.load_audio = load_audio
+        self.load_video = load_video
+        self.load_emotion = load_emotion
+        self.load_3dmm = load_3dmm
+        self.load_ref = load_ref
 
         self._audio_path = os.path.join(self._data_path, 'Audio_files')
         self._video_path = os.path.join(self._data_path, 'Video_files')
         self._emotion_path = os.path.join(self._data_path, 'Emotion')
         self._3dmm_path = os.path.join(self._data_path, '3D_FV_files')
 
-        self._list_path = self._list_path.drop(0)
-        self.data_list = []
-        self._transform = Transform(img_size, crop_size)
 
         self.mean_face = torch.FloatTensor(
             np.load('external/FaceVerse/mean_face.npy').astype(np.float32)).view(1, 1, -1)
         self.std_face = torch.FloatTensor(
             np.load('external/FaceVerse/std_face.npy').astype(np.float32)).view(1, 1, -1)
 
-        # self._transform_3dmm = transforms.Lambda(lambda e: (e - self.mean_face) / (self.std_face + 1e-6))
-
+        self._transform = Transform(img_size, crop_size)
         self._transform_3dmm = transforms.Lambda(lambda e: (e - self.mean_face) )
 
         speaker_path = list(self._list_path.values[:, 1])
         listener_path = list(self._list_path.values[:, 2])
 
+        if self._split in ["val", "test"] and repeat_mirrored: # training is always mirrored as data augmentation
+            speaker_path_tmp = speaker_path + listener_path
+            listener_path_tmp = listener_path + speaker_path
+            speaker_path = speaker_path_tmp
+            listener_path = listener_path_tmp
 
+        self.data_list = []
         for i, (sp, lp) in enumerate(zip(speaker_path, listener_path)):
 
             ab_speaker_video_path = os.path.join(self._video_path, sp)
@@ -153,304 +174,94 @@ class TrainValDataset(data.Dataset):
     def __getitem__(self, index):
         """Returns one data pair (source and target)."""
         # seq_len, fea_dim
-
         data = self.data_list[index]
+
+        # ========================= Data Augmentation ==========================
         changed_sign = 0
-        if self._train:
+        if self._split == 'train': # only done at training time
             changed_sign = random.randint(0,1)
 
-        if changed_sign == 1:
-            listener_video_path = data['speaker_video_path']
-            speaker_video_path = data['listener_video_path']
+        speaker_prefix = 'speaker' if changed_sign == 0 else 'listener'
+        listener_prefix = 'listener' if changed_sign == 0 else 'speaker'
 
-            listener_audio_path = data['speaker_audio_path']
-            speaker_audio_path = data['listener_audio_path']
+        # ========================= Load Speaker & Listener video clip ==========================
+        speaker_video_path = data[f'{listener_prefix}_video_path']
+        listener_video_path = data[f'{speaker_prefix}_video_path']
 
-            listener_emotion_path = data['speaker_emotion_path']
-            speaker_emotion_path = data['listener_emotion_path']
+        if self.load_video or self.load_ref: # otherwise, no need to compute these image paths
+            img_paths = os.listdir(speaker_video_path)
+            total_length = len(img_paths)
+            img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
+            cp = random.randint(0, total_length - 1 - self._clip_length) if self._clip_length < total_length else 0
+            img_paths = img_paths[cp: cp + self._clip_length]
 
-            listener_3dmm_path = data['speaker_3dmm_path']
-            speaker_3dmm_path = data['listener_3dmm_path']
+        speaker_video_clip = 0
+        if self.load_video:
+            clip = []
+            for img_path in img_paths:
+                img = self._img_loader(os.path.join(speaker_video_path, img_path))
+                img = self._transform(img)
+                clip.append(img.unsqueeze(0))
+            speaker_video_clip = torch.cat(clip, dim=0)
+            speaker_video_clip = speaker_video_clip[cp:cp + self._clip_length]
+        
+        # listener video clip only needed for test
+        listener_video_clip = 0
+        if self.load_video and self._split in ['test']:
+            clip = []
+            for img_path in img_paths:
+                img = self._img_loader(os.path.join(listener_video_path, img_path))
+                img = self._transform(img)
+                clip.append(img.unsqueeze(0))
+            listener_video_clip = torch.cat(clip, dim=0)
+            listener_video_clip = listener_video_clip[cp:cp + self._clip_length]
 
-        else:
-            speaker_video_path = data['speaker_video_path']
-            listener_video_path = data['listener_video_path']
+        # ========================= Load Speaker audio clip (listener is never needed) ==========================
+        listener_audio_clip, speaker_audio_clip = 0, 0
+        if self.load_audio:
+            speaker_audio_path = data[f'{listener_prefix}_audio_path']
+            speaker_audio_clip = extract_audio_features(speaker_audio_path, self._fps, total_length)
+            speaker_audio_clip = speaker_audio_clip[cp:cp + self._clip_length]
 
-            listener_audio_path = data['listener_audio_path']
-            speaker_audio_path =  data['speaker_audio_path']
-            speaker_emotion_path = data['speaker_emotion_path']
-            listener_emotion_path = data['listener_emotion_path']
+        # ========================= Load Speaker & Listener emotion ==========================
+        listener_emotion, speaker_emotion = 0, 0
+        if self.load_emotion:
+            listener_emotion_path = data[f'{speaker_prefix}_emotion_path']
+            listener_emotion = pd.read_csv(listener_emotion_path, header=None, delimiter=',')
+            listener_emotion = torch.from_numpy(np.array(listener_emotion.drop(0)).astype(np.float32))
 
-            speaker_3dmm_path = data['speaker_3dmm_path']
-            listener_3dmm_path = data['listener_3dmm_path']
+            speaker_emotion_path = data[f'{listener_prefix}_emotion_path']
+            speaker_emotion = pd.read_csv(speaker_emotion_path, header=None, delimiter=',')
+            speaker_emotion = torch.from_numpy(np.array(speaker_emotion.drop(0)).astype(np.float32))
 
+        # ========================= Load Listener 3DMM ==========================
+        listener_3dmm = 0
+        if self.load_3dmm:
+            listener_3dmm_path = data[f'{speaker_prefix}_3dmm_path']
+            listener_3dmm = torch.FloatTensor(np.load(listener_3dmm_path)).squeeze()
+            listener_3dmm = listener_3dmm[cp: cp + self._clip_length]
+            listener_3dmm = self._transform_3dmm(listener_3dmm)[0]
 
-        # speaker video clip
-        clip = []
-        img_paths = os.listdir(speaker_video_path)
-        total_length = len(img_paths)
-        img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-        clamp_pos = random.randint(0, total_length - 1 - self._clip_length)
-        img_paths = img_paths[clamp_pos: clamp_pos + self._clip_length]
+        # ========================= Load Listener Reference ==========================
+        listener_reference = 0
+        if self.load_ref: 
+            img_paths = os.listdir(listener_video_path)
+            img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
+            listener_reference = self._img_loader(os.path.join(listener_video_path, img_paths[0]))
+            listener_reference = self._transform(listener_reference)
 
-        for img_path in img_paths:
-            img = self._img_loader(os.path.join(speaker_video_path, img_path))
-            img = self._transform(img)
-            clip.append(img.unsqueeze(0))
-        speaker_video_clip = torch.cat(clip, dim=0)
-
-        img_paths = os.listdir(listener_video_path)
-        img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-        listener_reference = self._img_loader(os.path.join(listener_video_path, img_paths[0]))
-        listener_reference = self._transform(listener_reference)
-
-        # listener 3dmm clip
-        listener_3dmm = torch.FloatTensor(np.load(listener_3dmm_path)).squeeze()
-        listener_3dmm = listener_3dmm[clamp_pos: clamp_pos + self._clip_length]
-        listener_3dmm = self._transform_3dmm(listener_3dmm)[0]
-
-        speaker_audio_clip = extract_audio_features(speaker_audio_path, self._fps, total_length)[clamp_pos: clamp_pos + self._clip_length]
-        # print(speaker_audio_clip.shape)
-
-        listener_emotion = pd.read_csv(listener_emotion_path, header=None, delimiter=',')
-        listener_emotion = torch.from_numpy(np.array(listener_emotion.drop(0)).astype(np.float32))[clamp_pos: clamp_pos + self._clip_length]
-
-        return speaker_video_clip, speaker_audio_clip, listener_emotion, listener_3dmm, listener_reference
-
-    def __len__(self):
-        return self._len
-
-
-class ValDataset(data.Dataset):
-    """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=30):
-        """sign: train, val, test"""
-
-        self._root_path = root_path
-        self._img_loader = pil_loader
-        self._clip_length = clip_length
-        self._fps = fps
-
-        self._data_path = os.path.join(root_path, 'val')
-        self._list_path = pd.read_csv(os.path.join(self._root_path, 'val.csv'), header=None, delimiter=',')
-
-        self._audio_path = os.path.join(self._data_path, 'Audio_files')
-        self._video_path = os.path.join(self._data_path, 'Video_files')
-        self._emotion_path = os.path.join(self._data_path, 'Emotion')
-        self._3dmm_path = os.path.join(self._data_path, '3D_FV_files')
-
-        self._list_path = self._list_path.drop(0)
-        self.data_list = []
-        self._transform = Transform(img_size, crop_size)
-
-        self.mean_face = torch.FloatTensor(
-            np.load('external/FaceVerse/mean_face.npy').astype(np.float32)).view(1, 1, -1)
-        self.std_face = torch.FloatTensor(
-            np.load('external/FaceVerse/std_face.npy').astype(np.float32)).view(1, 1, -1)
-
-        self._transform_3dmm = transforms.Lambda(lambda e: (e - self.mean_face) )
-
-        speaker_path = list(self._list_path.values[:, 1])
-        listener_path = list(self._list_path.values[:, 2])
-
-        speaker_path_tmp = speaker_path + listener_path
-        listener_path_tmp = listener_path + speaker_path
-
-        speaker_path = speaker_path_tmp
-        listener_path = listener_path_tmp
-
-        for i, (sp, lp) in enumerate(zip(speaker_path, listener_path)):
-
-            ab_speaker_video_path = os.path.join(self._video_path, sp)
-            ab_speaker_audio_path = os.path.join(self._audio_path, sp +'.wav')
-            ab_speaker_emotion_path = os.path.join(self._emotion_path, sp +'.csv')
-            ab_speaker_3dmm_path = os.path.join(self._3dmm_path, sp + '.npy')
-
-            ab_listener_video_path =  os.path.join(self._video_path, lp)
-            ab_listener_audio_path = os.path.join(self._audio_path, lp +'.wav')
-            ab_listener_emotion_path = os.path.join(self._emotion_path, lp +'.csv')
-            ab_listener_3dmm_path = os.path.join(self._3dmm_path, lp + '.npy')
-
-            self.data_list.append({'speaker_video_path':ab_speaker_video_path, 'speaker_audio_path':ab_speaker_audio_path, 'speaker_emotion_path':ab_speaker_emotion_path, 'speaker_3dmm_path':ab_speaker_3dmm_path, 'listener_video_path': ab_listener_video_path, 'listener_audio_path':ab_listener_audio_path, 'listener_emotion_path':ab_listener_emotion_path, 'listener_3dmm_path':ab_listener_3dmm_path})
-
-
-        self._len =  len(self.data_list)
-
-
-    def __getitem__(self, index):
-        """Returns one data pair (source and target)."""
-        # seq_len, fea_dim
-
-        data = self.data_list[index]
-
-
-        speaker_video_path = data['speaker_video_path']
-        listener_video_path = data['listener_video_path']
-
-        speaker_audio_path =  data['speaker_audio_path']
-        speaker_emotion_path = data['speaker_emotion_path']
-        listener_emotion_path = data['listener_emotion_path']
-
-        listener_3dmm_path = data['listener_3dmm_path']
-
-
-        # speaker video clip
-        clip = []
-        img_paths = os.listdir(speaker_video_path)
-        total_length = len(img_paths)
-        img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-
-        for img_path in img_paths:
-            img = self._img_loader(os.path.join(speaker_video_path, img_path))
-            img = self._transform(img)
-            clip.append(img.unsqueeze(0))
-        speaker_video_clip = torch.cat(clip, dim=0)
-
-        img_paths = os.listdir(listener_video_path)
-        img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-        listener_reference = self._img_loader(os.path.join(listener_video_path, img_paths[0]))
-        listener_reference = self._transform(listener_reference)
-
-        clip = []
-        for img_path in img_paths:
-            img = self._img_loader(os.path.join(listener_video_path, img_path))
-            img = self._transform(img)
-            clip.append(img.unsqueeze(0))
-        listener_video_clip = torch.cat(clip, dim=0)
-
-
-        # listener 3dmm clip
-        listener_3dmm = torch.FloatTensor(np.load(listener_3dmm_path)).squeeze()
-        listener_3dmm = self._transform_3dmm(listener_3dmm)[0]
-
-        speaker_audio_clip = extract_audio_features(speaker_audio_path, self._fps, total_length)
-
-        speaker_emotion = pd.read_csv(speaker_emotion_path, header=None, delimiter=',')
-        speaker_emotion = torch.from_numpy(np.array(speaker_emotion.drop(0)).astype(np.float32))
-
-
-        listener_emotion = pd.read_csv(listener_emotion_path, header=None, delimiter=',')
-        listener_emotion = torch.from_numpy(np.array(listener_emotion.drop(0)).astype(np.float32))
-
-        return speaker_video_clip, speaker_audio_clip, speaker_emotion, listener_video_clip, listener_emotion, listener_3dmm, listener_reference
+        return speaker_video_clip, speaker_audio_clip, speaker_emotion, listener_video_clip, listener_audio_clip, listener_emotion, listener_3dmm, listener_reference
 
     def __len__(self):
         return self._len
-    
-    
-
-class TestDataset(data.Dataset):
-    """Custom data.Dataset compatible with data.DataLoader."""
-    def __init__(self, root_path, img_size = 256, crop_size = 224, clip_length = 751, fps=30):
-        """sign: train, val, test"""
-
-        self._root_path = root_path
-        self._img_loader = pil_loader
-        self._clip_length = clip_length
-        self._fps = fps
-
-        self._data_path = os.path.join(root_path, 'test')
-        self._list_path = pd.read_csv(os.path.join(self._root_path, 'test.csv'), header=None, delimiter=',')
-
-        self._audio_path = os.path.join(self._data_path, 'Audio_files')
-        self._video_path = os.path.join(self._data_path, 'Video_files')
-        self._emotion_path = os.path.join(self._data_path, 'Emotion')
-        self._3dmm_path = os.path.join(self._data_path, '3D_FV_files')
-
-        self._list_path = self._list_path.drop(0)
-        self.data_list = []
-        self._transform = Transform(img_size, crop_size)
-
-        self.mean_face = torch.FloatTensor(
-            np.load('external/FaceVerse/mean_face.npy').astype(np.float32)).view(1, 1, -1)
-        self.std_face = torch.FloatTensor(
-            np.load('external/FaceVerse/std_face.npy').astype(np.float32)).view(1, 1, -1)
-
-        self._transform_3dmm = transforms.Lambda(lambda e: (e - self.mean_face) )
-
-        speaker_path = list(self._list_path.values[:, 1])
-        listener_path = list(self._list_path.values[:, 2])
-
-        speaker_path_tmp = speaker_path + listener_path
-        listener_path_tmp = listener_path + speaker_path
-
-        speaker_path = speaker_path_tmp
-        listener_path = listener_path_tmp
-
-        for i, (sp, lp) in enumerate(zip(speaker_path, listener_path)):
-
-            ab_speaker_video_path = os.path.join(self._video_path, sp)
-            ab_speaker_audio_path = os.path.join(self._audio_path, sp +'.wav')
-            ab_speaker_emotion_path = os.path.join(self._emotion_path, sp +'.csv')
-            ab_speaker_3dmm_path = os.path.join(self._3dmm_path, sp + '.npy')
-
-            ab_listener_video_path =  os.path.join(self._video_path, lp)
-            ab_listener_audio_path = os.path.join(self._audio_path, lp +'.wav')
-            ab_listener_emotion_path = os.path.join(self._emotion_path, lp +'.csv')
-            ab_listener_3dmm_path = os.path.join(self._3dmm_path, lp + '.npy')
-
-            self.data_list.append({'speaker_video_path':ab_speaker_video_path, 'speaker_audio_path':ab_speaker_audio_path, 'speaker_emotion_path':ab_speaker_emotion_path, 'speaker_3dmm_path':ab_speaker_3dmm_path, 'listener_video_path': ab_listener_video_path, 'listener_audio_path':ab_listener_audio_path, 'listener_emotion_path':ab_listener_emotion_path, 'listener_3dmm_path':ab_listener_3dmm_path})
 
 
-        self._len =  len(self.data_list)
 
-
-    def __getitem__(self, index):
-        """Returns one data pair (source and target)."""
-        # seq_len, fea_dim
-
-        data = self.data_list[index]
-
-
-        speaker_video_path = data['speaker_video_path']
-        listener_video_path = data['listener_video_path']
-
-        speaker_audio_path =  data['speaker_audio_path']
-        speaker_emotion_path = data['speaker_emotion_path']
-        listener_emotion_path = data['listener_emotion_path']
-
-        listener_3dmm_path = data['listener_3dmm_path']
-
-
-        # speaker video clip
-        clip = []
-        img_paths = os.listdir(speaker_video_path)
-        total_length = len(img_paths)
-        img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-
-        for img_path in img_paths:
-            img = self._img_loader(os.path.join(speaker_video_path, img_path))
-            img = self._transform(img)
-            clip.append(img.unsqueeze(0))
-        speaker_video_clip = torch.cat(clip, dim=0)
-
-        img_paths = os.listdir(listener_video_path)
-        img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-        listener_reference = self._img_loader(os.path.join(listener_video_path, img_paths[0]))
-        listener_reference = self._transform(listener_reference)
-
-        clip = []
-        for img_path in img_paths:
-            img = self._img_loader(os.path.join(listener_video_path, img_path))
-            img = self._transform(img)
-            clip.append(img.unsqueeze(0))
-        listener_video_clip = torch.cat(clip, dim=0)
-
-
-        # listener 3dmm clip
-        listener_3dmm = torch.FloatTensor(np.load(listener_3dmm_path)).squeeze()
-        listener_3dmm = self._transform_3dmm(listener_3dmm)[0]
-
-        speaker_audio_clip = extract_audio_features(speaker_audio_path, self._fps, total_length)
-
-        speaker_emotion = pd.read_csv(speaker_emotion_path, header=None, delimiter=',')
-        speaker_emotion = torch.from_numpy(np.array(speaker_emotion.drop(0)).astype(np.float32))
-
-
-        listener_emotion = pd.read_csv(listener_emotion_path, header=None, delimiter=',')
-        listener_emotion = torch.from_numpy(np.array(listener_emotion.drop(0)).astype(np.float32))
-
-        return speaker_video_clip, speaker_audio_clip, speaker_emotion, listener_video_clip, listener_emotion, listener_3dmm, listener_reference
-
-    def __len__(self):
-        return self._len
+def get_dataloader(conf, split, load_audio=True, load_video=True, load_emotion=True, load_3dmm=True, load_ref=True):
+    assert split in ["train", "val", "test"], "split must be in [train, val, test]"
+    #print('==> Preparing data for {}...'.format(split) + '\n')
+    dataset = ReactionDataset(conf.dataset_path, split, img_size = conf.img_size, crop_size = conf.crop_size, clip_length = conf.seq_len,
+                              load_audio=load_audio, load_video=load_video, load_emotion=load_emotion, load_3dmm=load_3dmm, load_ref=load_ref)
+    shuffle = True if split == "train" else False
+    dataloader = DataLoader(dataset=dataset, batch_size=conf.batch_size, shuffle=shuffle, num_workers=conf.num_workers)
+    return dataloader

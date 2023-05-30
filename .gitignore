@@ -3,3 +3,4 @@
 /pytorch3d
 *.pth
 *.npy
+test.csv

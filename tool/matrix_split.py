@@ -6,7 +6,7 @@ import os
 
 def parse_arg():
     parser = argparse.ArgumentParser(description='PyTorch Training')
-    parser.add_argument('--dataset-path', default="/home/luocheng/Datasets/S-L", type=str, help="dataset path")
+    parser.add_argument('--dataset-path', default="./data", type=str, help="dataset path")
     parser.add_argument('--partition', default="val", type=str, help="dataset partition")
     args = parser.parse_args()
     return args
@@ -38,8 +38,6 @@ for index, row in val_path.iterrows():
         if path_val_item == path_data_index:
             index_list.append(index_2-1)
             flag = 1
-    if flag == 0:
-        print(path_t)
 
 l_m = len(index_list)
 new_matrix = np.zeros((l_m*2, l_m*2))
