@@ -33,7 +33,7 @@ def parse_arg():
     parser.add_argument('-seq-len', default=751, type=int, help="length of clip")
     parser.add_argument('--window-size', default=8, type=int, help="prediction window-size for online mode")
     parser.add_argument('--feature-dim', default=128, type=int, help="feature dim of model")
-    parser.add_argument('--audio-dim', default=39, type=int, help="feature dim of audio")
+    parser.add_argument('--audio-dim', default=78, type=int, help="feature dim of audio")
     parser.add_argument('--_3dmm-dim,', default=58, type=int, help="feature dim of 3dmm")
     parser.add_argument('--emotion-dim', default=25, type=int, help="feature dim of emotion")
     parser.add_argument('--online', action='store_true', help='online / offline method')
@@ -113,7 +113,7 @@ def main(args):
     lowest_val_loss = 10000
     train_loader = get_dataloader(args, "train", load_ref=False, load_video_l=False)
     val_loader = get_dataloader(args, "val", load_video_l=False)
-    model = TransformerVAE(img_size = args.img_size, audio_dim = args.audio_dim,  output_3dmm_dim = 58, output_emotion_dim = 25, feature_dim = args.feature_dim, seq_len = args.seq_len, online = args.online, window_size = args.window_size, device = args.device)
+    model = TransformerVAE(img_size = args.img_size, audio_dim = args.audio_dim,  output_3dmm_dim = args._3dmm_dim, output_emotion_dim = args.emotion_dim, feature_dim = args.feature_dim, seq_len = args.seq_len, online = args.online, window_size = args.window_size, device = args.device)
     criterion = VAELoss(args.kl_p)
 
     optimizer = optim.AdamW(model.parameters(), betas=(0.9, 0.999), lr=args.learning_rate, weight_decay=args.weight_decay)
