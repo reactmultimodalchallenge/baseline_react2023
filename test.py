@@ -28,7 +28,7 @@ def parse_arg():
     parser.add_argument('-seq-len', default=751, type=int, help="length of clip")
     parser.add_argument('--window-size', default=8, type=int, help="prediction window-size for online mode")
     parser.add_argument('--feature-dim', default=128, type=int, help="feature dim of model")
-    parser.add_argument('--audio-dim', default=39, type=int, help="feature dim of audio")
+    parser.add_argument('--audio-dim', default=78, type=int, help="feature dim of audio")
     parser.add_argument('--_3dmm-dim', default=58, type=int, help="feature dim of 3dmm")
     parser.add_argument('--emotion-dim', default=25, type=int, help="feature dim of emotion")
     parser.add_argument('--online', action='store_true', help='online / offline method')
