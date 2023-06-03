@@ -13,8 +13,6 @@ from PIL import Image
 import soundfile as sf
 import cv2
 from torch.utils.data import DataLoader
-
-# import librosa
 from multiprocessing import Pool
 import torchaudio
 from scipy.io import loadmat
@@ -97,7 +95,7 @@ class ReactionDataset(data.Dataset):
     """Custom data.Dataset compatible with data.DataLoader."""
     def __init__(self, root_path, split, img_size = 256, crop_size = 224, clip_length = 751, fps=25, 
                  load_audio=True, load_video_s=True, load_video_l=True, load_emotion=True, load_3dmm=True, load_ref=True,
-                 repeat_mirrored=True):
+                 repeat_mirrored= False):
         """
         Args:
             root_path: (str) Path to the data folder.
@@ -136,7 +134,6 @@ class ReactionDataset(data.Dataset):
         self._emotion_path = os.path.join(self._data_path, 'Emotion')
         self._3dmm_path = os.path.join(self._data_path, '3D_FV_files')
 
-
         self.mean_face = torch.FloatTensor(
             np.load('external/FaceVerse/mean_face.npy').astype(np.float32)).view(1, 1, -1)
         self.std_face = torch.FloatTensor(
@@ -148,7 +145,7 @@ class ReactionDataset(data.Dataset):
         speaker_path = list(self._list_path.values[:, 1])
         listener_path = list(self._list_path.values[:, 2])
 
-        if self._split in ["val", "test"] and repeat_mirrored: # training is always mirrored as data augmentation
+        if self._split in ["train"] or repeat_mirrored: # training is always mirrored as data augmentation
             speaker_path_tmp = speaker_path + listener_path
             listener_path_tmp = listener_path + speaker_path
             speaker_path = speaker_path_tmp
@@ -187,8 +184,8 @@ class ReactionDataset(data.Dataset):
         listener_prefix = 'listener' if changed_sign == 0 else 'speaker'
 
         # ========================= Load Speaker & Listener video clip ==========================
-        speaker_video_path = data[f'{listener_prefix}_video_path']
-        listener_video_path = data[f'{speaker_prefix}_video_path']
+        speaker_video_path = data[f'{speaker_prefix}_video_path']
+        listener_video_path = data[f'{listener_prefix}_video_path']
 
         if self.load_video_s or self.load_video_l or self.load_ref: # otherwise, no need to compute these image paths
             img_paths = os.listdir(speaker_video_path)
@@ -205,7 +202,7 @@ class ReactionDataset(data.Dataset):
                 img = self._transform(img)
                 clip.append(img.unsqueeze(0))
             speaker_video_clip = torch.cat(clip, dim=0)
-            speaker_video_clip = speaker_video_clip[cp:cp + self._clip_length]
+
         
         # listener video clip only needed for val/test
         listener_video_clip = 0
@@ -216,30 +213,32 @@ class ReactionDataset(data.Dataset):
                 img = self._transform(img)
                 clip.append(img.unsqueeze(0))
             listener_video_clip = torch.cat(clip, dim=0)
-            listener_video_clip = listener_video_clip[cp:cp + self._clip_length]
+
 
         # ========================= Load Speaker audio clip (listener audio is NEVER needed) ==========================
         listener_audio_clip, speaker_audio_clip = 0, 0
         if self.load_audio:
-            speaker_audio_path = data[f'{listener_prefix}_audio_path']
+            speaker_audio_path = data[f'{speaker_prefix}_audio_path']
             speaker_audio_clip = extract_audio_features(speaker_audio_path, self._fps, total_length)
             speaker_audio_clip = speaker_audio_clip[cp:cp + self._clip_length]
+
+
 
         # ========================= Load Speaker & Listener emotion ==========================
         listener_emotion, speaker_emotion = 0, 0
         if self.load_emotion:
-            listener_emotion_path = data[f'{speaker_prefix}_emotion_path']
+            listener_emotion_path = data[f'{listener_prefix}_emotion_path']
             listener_emotion = pd.read_csv(listener_emotion_path, header=None, delimiter=',')
-            listener_emotion = torch.from_numpy(np.array(listener_emotion.drop(0)).astype(np.float32))
+            listener_emotion = torch.from_numpy(np.array(listener_emotion.drop(0)).astype(np.float32))[cp: cp + self._clip_length]
 
-            speaker_emotion_path = data[f'{listener_prefix}_emotion_path']
+            speaker_emotion_path = data[f'{speaker_prefix}_emotion_path']
             speaker_emotion = pd.read_csv(speaker_emotion_path, header=None, delimiter=',')
-            speaker_emotion = torch.from_numpy(np.array(speaker_emotion.drop(0)).astype(np.float32))
+            speaker_emotion = torch.from_numpy(np.array(speaker_emotion.drop(0)).astype(np.float32))[cp: cp + self._clip_length]
 
         # ========================= Load Listener 3DMM ==========================
         listener_3dmm = 0
         if self.load_3dmm:
-            listener_3dmm_path = data[f'{speaker_prefix}_3dmm_path']
+            listener_3dmm_path = data[f'{listener_prefix}_3dmm_path']
             listener_3dmm = torch.FloatTensor(np.load(listener_3dmm_path)).squeeze()
             listener_3dmm = listener_3dmm[cp: cp + self._clip_length]
             listener_3dmm = self._transform_3dmm(listener_3dmm)[0]
@@ -259,11 +258,11 @@ class ReactionDataset(data.Dataset):
 
 
 
-def get_dataloader(conf, split, load_audio=True, load_video_s=True, load_video_l=True, load_emotion=True, load_3dmm=True, load_ref=True):
+def get_dataloader(conf, split, load_audio=True, load_video_s=True, load_video_l=True, load_emotion=True, load_3dmm=True, load_ref=True, repeat_mirrored =  False):
     assert split in ["train", "val", "test"], "split must be in [train, val, test]"
     #print('==> Preparing data for {}...'.format(split) + '\n')
     dataset = ReactionDataset(conf.dataset_path, split, img_size = conf.img_size, crop_size = conf.crop_size, clip_length = conf.seq_len,
-                              load_audio=load_audio, load_video_s=load_video_s, load_video_l=load_video_l, load_emotion=load_emotion, load_3dmm=load_3dmm, load_ref=load_ref)
+                              load_audio=load_audio, load_video_s=load_video_s, load_video_l=load_video_l, load_emotion=load_emotion, load_3dmm=load_3dmm, load_ref=load_ref, repeat_mirrored = repeat_mirrored)
     shuffle = True if split == "train" else False
     dataloader = DataLoader(dataset=dataset, batch_size=conf.batch_size, shuffle=shuffle, num_workers=conf.num_workers)
     return dataloader
