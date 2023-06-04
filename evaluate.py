@@ -100,8 +100,11 @@ def val(args, model, val_loader, criterion, render):
     print("-----------------Evaluating Metric-----------------")
     
     #If you have problems running function compute_FRC_mp, please replace this function with function compute_FRC
-    FRC = compute_FRC_mp(args, all_listener_emotion, listener_emotion)
+    FRC = compute_FRC_mp(args, all_listener_emotion, listener_emotion, val_test=args.split)
+    
     #If you have problems running function compute_FRD_mp, please replace this function with function compute_FRD
+    FRD = compute_FRD_mp(args, all_listener_emotion, listener_emotion, val_test=args.split)
+
     FRDvs = compute_FRDvs(all_listener_emotion)
     FRVar  = compute_FRVar(all_listener_emotion)
     smse  = compute_s_mse(all_listener_emotion)
