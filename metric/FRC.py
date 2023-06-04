@@ -105,3 +105,41 @@ def compute_FRC_mp(args, pred, em, val_test='val', p=4):
         FRC_list += pool.starmap(_func_partial, zip(neighbour_matrix, pred))
     return np.mean(FRC_list)
 
+
+  
+def compute_FRC(args, pred, listener_em, val_test='val'):
+    pred = pred
+    listener_em = listener_em
+    if val_test == 'val':
+        speaker_neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_val.npy'))
+    else:
+        speaker_neighbour_matrix = np.load(os.path.join(args.dataset_path, 'neighbour_emotion_test.npy'))
+
+    all_FRC_list = []
+    for i in range(pred.shape[1]):
+        FRC_list = []
+        for k in range(pred.shape[0]):
+            speaker_neighbour_index = np.argwhere(speaker_neighbour_matrix[k] == 1).reshape(-1)
+            speaker_neighbour_index_len = len(speaker_neighbour_index)
+            ccc_list = []
+            for n_index in range(speaker_neighbour_index_len):
+
+                ''' 
+                listener_em order :[listener1, listener2, listener3, ....., listener_n, speaker1, speaker2, speaker3, ....., speaker_n]
+                listener1: [1, emotion_dim] 
+                
+                listener_em[speaker_neighbour_index[n_index]]: 
+                1. speaker_neighbour_index[n_index]: speaker_j (with similar emotion as the speaker_k)
+                2. listener_em[speaker_neighbour_index[n_index]]: emotion features of listener_j (speaker_j -> listener_j)
+                So we can get an additional GT listener_j to listener_k (i.e., speaker_j -> listener_k)
+                '''
+
+                similar_listener_emotion = listener_em[speaker_neighbour_index[n_index]]
+                ccc = concordance_correlation_coefficient(similar_listener_emotion.numpy(), pred[k,i].numpy())
+                ccc_list.append(ccc)
+            max_ccc = max(ccc_list)
+            FRC_list.append(max_ccc)
+        all_FRC_list.append(np.mean(FRC_list))
+    return sum(all_FRC_list)
+
+
