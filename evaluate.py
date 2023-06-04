@@ -98,9 +98,10 @@ def val(args, model, val_loader, criterion, render):
     all_listener_emotion = torch.cat(all_listener_emotion_list, dim=1)
 
     print("-----------------Evaluating Metric-----------------")
-
+    
+    #If you have problems running function compute_FRC_mp, please replace this function with function compute_FRC
     FRC = compute_FRC_mp(args, all_listener_emotion, listener_emotion)
-    FRD = compute_FRD_mp(args, all_listener_emotion, listener_emotion)
+    #If you have problems running function compute_FRD_mp, please replace this function with function compute_FRD
     FRDvs = compute_FRDvs(all_listener_emotion)
     FRVar  = compute_FRVar(all_listener_emotion)
     smse  = compute_s_mse(all_listener_emotion)
