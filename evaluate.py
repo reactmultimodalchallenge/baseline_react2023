@@ -86,7 +86,7 @@ def val(args, model, val_loader, criterion, render):
     print("-----------------Repeat 9 times-----------------")
     for i in range(9):
         listener_emotion_list = []
-        for batch_idx, (speaker_video_clip, speaker_audio_clip, _, _, _, _, _, _) in enumerate(tqdm(val_loader)):
+        for batch_idx, (speaker_video_clip, speaker_audio_clip, _, _, _, _, _, _, _) in enumerate(tqdm(val_loader)):
             if torch.cuda.is_available():
                 speaker_video_clip, speaker_audio_clip = \
                     speaker_video_clip[:,:750].cuda(), speaker_audio_clip[:,:750].cuda()
