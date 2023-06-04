@@ -42,8 +42,7 @@ def parse_arg():
     args = parser.parse_args()
     return args
 
-
-# Train
+# Evaluating
 def val(args, model, val_loader, criterion, render):
     losses = AverageMeter()
     rec_losses = AverageMeter()
@@ -54,9 +53,10 @@ def val(args, model, val_loader, criterion, render):
     if not os.path.exists(out_dir):
         os.makedirs(out_dir)
 
-    listener_emotion_list = []
+    listener_emotion_gt_list = []
+    listener_emotion_pred_list = []
     speaker_emotion_list = []
-    all_listener_emotion_list = []
+    all_listener_emotion_pred_list = []
 
     for batch_idx, (speaker_video_clip, speaker_audio_clip, speaker_emotion, _, listener_video_clip, _, listener_emotion, listener_3dmm, listener_references) in enumerate(tqdm(val_loader)):
         if torch.cuda.is_available():
@@ -76,41 +76,45 @@ def val(args, model, val_loader, criterion, render):
                 for bs in range(B):
                     render.rendering_for_fid(out_dir, "{}_b{}_ind{}".format(args.split, str(batch_idx + 1), str(bs + 1)),
                             listener_3dmm_out[bs], speaker_video_clip[bs], listener_references[bs], listener_video_clip[bs,:750])
-            listener_emotion_list.append(listener_emotion_out.cpu())
+            listener_emotion_pred_list.append(listener_emotion_out.cpu())
+            listener_emotion_gt_list.append(listener_emotion.cpu())
             speaker_emotion_list.append(speaker_emotion)
 
-    listener_emotion = torch.cat(listener_emotion_list, dim = 0)
+    listener_emotion_pred = torch.cat(listener_emotion_pred_list, dim = 0)
+    listener_emotion_gt = torch.cat(listener_emotion_gt_list, dim = 0)
     speaker_emotion = torch.cat(speaker_emotion_list, dim = 0)
-    all_listener_emotion_list.append(listener_emotion.unsqueeze(1))
+    all_listener_emotion_pred_list.append(listener_emotion_pred.unsqueeze(1))
 
     print("-----------------Repeat 9 times-----------------")
     for i in range(9):
-        listener_emotion_list = []
-        for batch_idx, (speaker_video_clip, speaker_audio_clip, _, _, _, _, _, _, _) in enumerate(tqdm(val_loader)):
+        listener_emotion_pred_list = []
+        for batch_idx, (
+        speaker_video_clip, speaker_audio_clip, _, _, _, _, _, _, _) in enumerate(tqdm(val_loader)):
             if torch.cuda.is_available():
                 speaker_video_clip, speaker_audio_clip = \
                     speaker_video_clip[:,:750].cuda(), speaker_audio_clip[:,:750].cuda()
             with torch.no_grad():
                 _, listener_emotion_outs, _ = model(speaker_video_clip, speaker_audio_clip)
-                listener_emotion_list.append(listener_emotion_outs[:,:750].cpu())
-        listener_emotion = torch.cat(listener_emotion_list, dim=0)
-        all_listener_emotion_list.append(listener_emotion.unsqueeze(1))
-    all_listener_emotion = torch.cat(all_listener_emotion_list, dim=1)
+                listener_emotion_pred_list.append(listener_emotion_outs[:,:750].cpu())
+        listener_emotion_pred = torch.cat(listener_emotion_pred_list, dim=0)
+        all_listener_emotion_pred_list.append(listener_emotion_pred.unsqueeze(1))
+    all_listener_emotion_pred = torch.cat(all_listener_emotion_pred_list, dim=1)
 
     print("-----------------Evaluating Metric-----------------")
-    
-    #If you have problems running function compute_FRC_mp, please replace this function with function compute_FRC
-    FRC = compute_FRC_mp(args, all_listener_emotion, listener_emotion, val_test=args.split)
-    
-    #If you have problems running function compute_FRD_mp, please replace this function with function compute_FRD
-    FRD = compute_FRD_mp(args, all_listener_emotion, listener_emotion, val_test=args.split)
 
-    FRDvs = compute_FRDvs(all_listener_emotion)
-    FRVar  = compute_FRVar(all_listener_emotion)
-    smse  = compute_s_mse(all_listener_emotion)
-    TLCC = compute_TLCC(all_listener_emotion, speaker_emotion)
+    # If you have problems running function compute_FRC_mp, please replace this function with function compute_FRC
+    FRC = compute_FRC_mp(args, all_listener_emotion_pred, listener_emotion_gt, val_test=args.split)
+
+    # If you have problems running function compute_FRD_mp, please replace this function with function compute_FRD
+    FRD = compute_FRD_mp(args, all_listener_emotion_pred, listener_emotion_gt, val_test=args.split)
+
+    FRDvs = compute_FRDvs(all_listener_emotion_pred)
+    FRVar  = compute_FRVar(all_listener_emotion_pred)
+    smse  = compute_s_mse(all_listener_emotion_pred)
+    TLCC = compute_TLCC(all_listener_emotion_pred, speaker_emotion)
 
     return losses.avg, rec_losses.avg, kld_losses.avg, FRC, FRD, FRDvs, FRVar, smse, TLCC
+
 
 
 def main(args):
