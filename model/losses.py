@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 
@@ -19,7 +20,6 @@ class KLLoss(nn.Module):
 class VAELoss(nn.Module):
     def __init__(self, kl_p=0.0002):
         super(VAELoss, self).__init__()
-        # self.mse = nn.SmoothL1Loss(reduce=True, size_average=True)
         self.mse = nn.MSELoss(reduce=True, size_average=True)
         self.kl_loss = KLLoss()
         self.kl_p = kl_p
@@ -43,3 +43,14 @@ class VAELoss(nn.Module):
     def __repr__(self):
         return "VAELoss()"
 
+
+
+def div_loss(Y_1, Y_2):
+    loss = 0.0
+    b,t,c = Y_1.shape
+    Y_g = torch.cat([Y_1.view(b,1,-1), Y_2.view(b,1,-1)], dim = 1)
+    for Y in Y_g:
+        dist = F.pdist(Y, 2) ** 2
+        loss += (-dist /  100).exp().mean()
+    loss /= b
+    return loss
