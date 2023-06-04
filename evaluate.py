@@ -26,7 +26,8 @@ def parse_arg():
                         help='number of data loading workers (default: 8)')
     parser.add_argument('--img-size', default=256, type=int, help="size of train/test image data")
     parser.add_argument('--crop-size', default=224, type=int, help="crop size of train/test image data")
-    parser.add_argument('-seq-len', default=751, type=int, help="length of clip")
+    parser.add_argument('-max-seq-len', default=751, type=int, help="max length of clip")
+    parser.add_argument('--clip-length', default=751, type=int, help="len of video clip")
     parser.add_argument('--window-size', default=8, type=int, help="prediction window-size for online mode")
     parser.add_argument('--feature-dim', default=128, type=int, help="feature dim of model")
     parser.add_argument('--audio-dim', default=78, type=int, help="feature dim of audio")
@@ -57,7 +58,7 @@ def val(args, model, val_loader, criterion, render):
     speaker_emotion_list = []
     all_listener_emotion_list = []
 
-    for batch_idx, (speaker_video_clip, speaker_audio_clip, speaker_emotion, listener_video_clip, _, listener_emotion, listener_3dmm, listener_references) in enumerate(tqdm(val_loader)):
+    for batch_idx, (speaker_video_clip, speaker_audio_clip, speaker_emotion, _, listener_video_clip, _, listener_emotion, listener_3dmm, listener_references) in enumerate(tqdm(val_loader)):
         if torch.cuda.is_available():
             speaker_video_clip, speaker_audio_clip, listener_emotion, listener_3dmm, listener_references = \
                 speaker_video_clip[:,:750].cuda(), speaker_audio_clip[:,:750].cuda(), listener_emotion[:,:750].cuda(), listener_3dmm[:,:750].cuda(), listener_references[:,:750].cuda()
@@ -97,6 +98,7 @@ def val(args, model, val_loader, criterion, render):
     all_listener_emotion = torch.cat(all_listener_emotion_list, dim=1)
 
     print("-----------------Evaluating Metric-----------------")
+
     FRC = compute_FRC_mp(args, all_listener_emotion, listener_emotion)
     FRD = compute_FRD_mp(args, all_listener_emotion, listener_emotion)
     FRDvs = compute_FRDvs(all_listener_emotion)
@@ -108,8 +110,8 @@ def val(args, model, val_loader, criterion, render):
 
 
 def main(args):
-    val_loader = get_dataloader(args, args.split)
-    model = TransformerVAE(img_size = args.img_size, audio_dim = args.audio_dim, output_emotion_dim = args.emotion_dim, output_3dmm_dim = args._3dmm_dim, feature_dim = args.feature_dim, seq_len = args.seq_len, online = args.online, window_size = args.window_size, device = args.device)
+    val_loader = get_dataloader(args, args.split, load_audio=True, load_video_s=True, load_video_l=True, load_emotion_s=True, load_emotion_l=True, load_3dmm_l=True, load_ref=True)
+    model = TransformerVAE(img_size = args.img_size, audio_dim = args.audio_dim, output_emotion_dim = args.emotion_dim, output_3dmm_dim = args._3dmm_dim, feature_dim = args.feature_dim, seq_len = args.max_seq_len, online = args.online, window_size = args.window_size, device = args.device)
     criterion = VAELoss(args.kl_p)
 
     if args.resume != '':
@@ -127,7 +129,7 @@ def main(args):
 
     val_loss, rec_loss, kld_loss, FRC, FRD, FRDvs, FRVar, smse, TLCC = val(args, model, val_loader, criterion, render)
     print("{}_loss: {:.5f}   {}_rec_loss: {:.5f}  {}_kld_loss: {:.5f} ".format(args.split, val_loss, args.split, rec_loss, args.split, kld_loss))
-    print("Metric: | FRC: {:.5f}| FRD: {:.5f}| FRDvs: {:.5f}| FRVar: {:.5f}| S-MSE: {:.5f}| TLCC: {:.5f}".format(FRC, FRD, FRDvs, FRVar, smse, TLCC))
+    print("Metric: | FRC: {:.5f} | FRD: {:.5f} | S-MSE: {:.5f} | FRVar: {:.5f} | FRDvs: {:.5f} | TLCC: {:.5f}".format(FRC, FRD, smse, FRVar, FRDvs, TLCC))
 
 
 # ---------------------------------------------------------------------------------
