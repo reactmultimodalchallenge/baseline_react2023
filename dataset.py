@@ -97,7 +97,7 @@ class ReactionDataset(data.Dataset):
     def __init__(self, root_path, split, img_size=256, crop_size=224, clip_length=751, fps=25,
                  load_audio=True, load_video_s=True, load_video_l=True, load_emotion_s=False, load_emotion_l=False,
                  load_3dmm_s=False, load_3dmm_l=False, load_ref=True,
-                 repeat_mirrored=False):
+                 repeat_mirrored=True):
         """
         Args:
             root_path: (str) Path to the data folder.
@@ -149,7 +149,7 @@ class ReactionDataset(data.Dataset):
         speaker_path = list(self._list_path.values[:, 1])
         listener_path = list(self._list_path.values[:, 2])
 
-        if self._split in ["train"] or repeat_mirrored:  # training is always mirrored as data augmentation
+        if self._split in ["val", "test"] or repeat_mirrored:  # training is always mirrored as data augmentation
             speaker_path_tmp = speaker_path + listener_path
             listener_path_tmp = listener_path + speaker_path
             speaker_path = speaker_path_tmp
@@ -271,7 +271,7 @@ class ReactionDataset(data.Dataset):
 
 
 def get_dataloader(conf, split, load_audio=False, load_video_s=False, load_video_l=False, load_emotion_s=False,
-                   load_emotion_l=False, load_3dmm_s=False, load_3dmm_l=False, load_ref=False, repeat_mirrored=False):
+                   load_emotion_l=False, load_3dmm_s=False, load_3dmm_l=False, load_ref=False, repeat_mirrored=True):
     assert split in ["train", "val", "test"], "split must be in [train, val, test]"
     # print('==> Preparing data for {}...'.format(split) + '\n')
     dataset = ReactionDataset(conf.dataset_path, split, img_size=conf.img_size, crop_size=conf.crop_size,
