@@ -4,3 +4,4 @@
 *.pth
 *.npy
 test.csv
+/results

@@ -1,11 +1,9 @@
 import numpy as np
 from scipy.spatial.distance import pdist
 import numpy as np
-import torch
 import pandas as pd
 import os
 from tslearn.metrics import dtw
-import torch
 from functools import partial
 import multiprocessing as mp
 
@@ -154,7 +152,7 @@ def _func(k_neighbour_matrix, k_pred, em=None):
         ccc_list = []
         for n_index in range(neighbour_index_len):
             emotion = em[neighbour_index[n_index]]
-            ccc = concordance_correlation_coefficient(emotion.numpy(), k_pred[i].numpy())
+            ccc = concordance_correlation_coefficient(emotion, k_pred[i])
             ccc_list.append(ccc)
         max_ccc_sum += max(ccc_list)
     return max_ccc_sum
@@ -172,6 +170,6 @@ def compute_FRC_mp(args, pred, em, val_test='val', p=1):
     FRC_list = []
     with mp.Pool(processes=p) as pool:
         # use map
-        _func_partial = partial(_func, em=em)
-        FRC_list += pool.starmap(_func_partial, zip(neighbour_matrix, pred))
+        _func_partial = partial(_func, em=em.numpy())
+        FRC_list += pool.starmap(_func_partial, zip(neighbour_matrix, pred.numpy()))
     return np.mean(FRC_list)

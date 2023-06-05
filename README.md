@@ -271,7 +271,17 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
   year={2017}
 }
 
+```
 
+If you use or compare to the diffusion-based baseline, please cite the following paper too:
+
+```BibTeX
+@article{barquero2022belfusion,
+  title={BeLFusion: Latent Diffusion for Behavior-Driven Human Motion Prediction},
+  author={Barquero, German and Escalera, Sergio and Palmero, Cristina},
+  journal={arXiv preprint arXiv:2211.14304},
+  year={2022}
+}
 ```
 
 ## 🤝 Acknowledgement

@@ -6,6 +6,18 @@ import torch.nn as nn
 import cv2
 import numpy as np
 import torch.nn.functional as F
+from omegaconf import OmegaConf
+import os
+
+
+def load_config(config_path=None):
+    cli_conf = OmegaConf.from_cli()
+    model_conf = OmegaConf.load(cli_conf.pop('config') if config_path is None else config_path)
+    return OmegaConf.merge(model_conf, cli_conf)
+
+def load_config_from_file(path):
+    return OmegaConf.load(path)
+
 
 def torch_img_to_np(img):
     return img.detach().cpu().numpy().transpose(0, 2, 3, 1)

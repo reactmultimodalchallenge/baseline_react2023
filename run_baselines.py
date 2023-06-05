@@ -67,7 +67,7 @@ def get_baseline(cfg, baseline, num_pred=10, speaker_emotion=None, listener_emot
 # Train
 def val(cfg):
     assert cfg.split in ["val", "test"], "split must be in [val, test]"
-    dataloader = get_dataloader(cfg, cfg.split, load_emotion_s=True, load_emotion_l=True)
+    dataloader = get_dataloader(cfg, cfg.split, load_emotion_s=True, load_emotion_l=True, load_audio=False, load_video_s=False, load_video_l=False, load_3dmm_s=False, load_3dmm_l=False, load_ref=False)
 
     for i, baseline in enumerate(baselines):
         listener_emotion_pred_list = []
@@ -100,7 +100,7 @@ def val(cfg):
         FRDvs = compute_FRDvs(all_pred_listener_emotion)
         FRVar  = compute_FRVar(all_pred_listener_emotion)
         smse  = compute_s_mse(all_pred_listener_emotion)
-        TLCC = compute_TLCC(all_pred_listener_emotion, all_speaker_emotion)
+        TLCC = compute_TLCC_mp(all_pred_listener_emotion, all_speaker_emotion, p=p)
 
         # print all results in one line
         print("[{}/{}] Baseline: {}, FRC: {:.5f} | FRD: {:.5f} | S-MSE: {:.5f} | FRVar: {:.5f} | FRDvs: {:.5f} | TLCC: {:.5f}".format(i+1,
@@ -113,7 +113,6 @@ def val(cfg):
                                                                                               FRDvs,
                                                                                               TLCC))
 
-        # latex friendly. FRC, FRD, TLCC with 2 decimals, FRDvs, FRVar, smse with 4 decimals. Split by columns in a table
         print("Latex-friendly --> B\\_{} & {:.2f} & {:.2f} & {:.4f} & {:.4f} & {:.4f} & - & {:.2f} \\\\".format(baseline, FRC, FRD, smse, FRVar, FRDvs, TLCC))
 
 

@@ -192,12 +192,11 @@ class ReactionDataset(data.Dataset):
         speaker_video_path = data[f'{speaker_prefix}_video_path']
         listener_video_path = data[f'{listener_prefix}_video_path']
 
-        if self.load_video_s or self.load_video_l or self.load_ref:  # otherwise, no need to compute these image paths
-            img_paths = os.listdir(speaker_video_path)
-            total_length = len(img_paths)
-            img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
-            cp = random.randint(0, total_length - 1 - self._clip_length) if self._clip_length < total_length else 0
-            img_paths = img_paths[cp: cp + self._clip_length]
+        img_paths = os.listdir(speaker_video_path)
+        total_length = len(img_paths)
+        img_paths = sorted(img_paths, key=cmp_to_key(lambda a, b: int(a[:-4]) - int(b[:-4])))
+        cp = random.randint(0, total_length - 1 - self._clip_length) if self._clip_length < total_length else 0
+        img_paths = img_paths[cp: cp + self._clip_length]
 
         speaker_video_clip = 0
         if self.load_video_s:

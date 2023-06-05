@@ -206,7 +206,7 @@ class TransformerVAE(nn.Module):
         self.reaction_decoder = Decoder(output_3dmm_dim = output_3dmm_dim, output_emotion_dim = output_emotion_dim, feature_dim = feature_dim,  device=device, window_size = self.window_size, online = online)
         self.fusion = nn.Linear(feature_dim + self.output_3dmm_dim + self.output_emotion_dim, feature_dim)
 
-    def forward(self, speaker_video, speaker_audio):
+    def forward(self, speaker_video=None, speaker_audio=None, **kwargs):
 
         """
         input:

@@ -15,7 +15,7 @@ def _func(k_neighbour_matrix, k_pred, em=None):
             emotion = em[neighbour_index[n_index]]
             res = 0
             for st, ed, weight in [(0, 15, 1 / 15), (15, 17, 1), (17, 25, 1 / 8)]:
-                res += weight * dtw(k_pred[i].numpy().astype(np.float32)[:, st: ed], emotion.numpy().astype(np.float32)[:, st: ed])
+                res += weight * dtw(k_pred[i].astype(np.float32)[:, st: ed], emotion.astype(np.float32)[:, st: ed])
             dwt_list.append(res)
         min_dwt_sum += min(dwt_list)
     return min_dwt_sum
@@ -33,8 +33,8 @@ def compute_FRD_mp(args, pred, em, val_test='val', p=4):
     FRD_list = []
     with mp.Pool(processes=p) as pool:
         # use map
-        _func_partial = partial(_func, em=em)
-        FRD_list += pool.starmap(_func_partial, zip(neighbour_matrix, pred))
+        _func_partial = partial(_func, em=em.numpy())
+        FRD_list += pool.starmap(_func_partial, zip(neighbour_matrix, pred.numpy()))
 
     return np.mean(FRD_list)
 

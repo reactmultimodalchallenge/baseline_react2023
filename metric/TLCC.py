@@ -6,8 +6,8 @@ def crosscorr(datax, datay, lag=0, dim=25):
     pcc_list = []
     for i in range(dim):
         cn_1, cn_2 = shift(datax[:, i], datay[:, i], lag)
-        pcc_i = np.corrcoef(cn_1.cpu().numpy(), cn_2.cpu().numpy())[0, 1]
-        # pcc_i = torch.corrcoef(torch.stack([cn_1, cn_2], dim=0).float().numpy())[0, 1]
+        pcc_i = np.corrcoef(cn_1, cn_2)[0, 1]
+        # pcc_i = torch.corrcoef(torch.stack([cn_1, cn_2], dim=0).float())[0, 1]
         pcc_list.append(pcc_i.item())
     return torch.mean(torch.Tensor(pcc_list))
 
@@ -27,14 +27,14 @@ def compute_TLCC(pred, speaker):
         pred_item = pred[k]
         sp_item = speaker[k]
         for i in range(pred_item.shape[0]):
-            peak, center, offset = calculate_tlcc(pred_item[i].float(), sp_item.float())
+            peak, center, offset = calculate_tlcc(pred_item[i].float().numpy(), sp_item.float().numpy())
             offset_list.append(torch.abs(offset).item())
     return torch.mean(torch.Tensor(offset_list)).item()
 
 
 def _func(pred_item, sp_item):
     for i in range(pred_item.shape[0]):
-        peak, center, offset = calculate_tlcc(pred_item[i].float(), sp_item.float())
+        peak, center, offset = calculate_tlcc(pred_item[i], sp_item)
         return torch.abs(offset).item()
 
 def compute_TLCC_mp(pred, speaker, p=8):
@@ -46,7 +46,7 @@ def compute_TLCC_mp(pred, speaker, p=8):
     
     with mp.Pool(processes=p) as pool:
         # use map
-        offset_list += pool.starmap(_func, zip(pred, speaker))
+        offset_list += pool.starmap(_func, zip(pred.float().numpy(), speaker.float().numpy()))
     return torch.mean(torch.Tensor(offset_list)).item()
 
 
