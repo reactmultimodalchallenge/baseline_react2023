@@ -87,7 +87,6 @@ def val(args, model, val_loader, criterion, render):
             B = speaker_video_clip.shape[0]
             if (batch_idx % 25) == 0:
                 for bs in range(B):
-                    continue # TODO remove
                     render.rendering_for_fid(out_dir, "{}_b{}_ind{}".format(args.split, str(batch_idx + 1), str(bs + 1)),
                             listener_3dmm_out[bs], speaker_video_clip[bs], listener_references[bs], listener_video_clip[bs,:750])
             listener_emotion_pred_list.append(listener_emotion_out.cpu())
@@ -154,7 +153,7 @@ def main(args):
         cfg = load_config(config_path)
         dataset_cfg = cfg.validation_dataset if args.split == "val" else cfg.test_dataset
         dataset_cfg.dataset_path = args.dataset_path
-        val_loader = get_dataloader(dataset_cfg, args.split, load_audio=False, load_video_s=False, load_video_l=False, load_emotion_s=True,
+        val_loader = get_dataloader(dataset_cfg, args.split, load_audio=False, load_video_s=True, load_video_l=True, load_emotion_s=True,
                                                     load_emotion_l=True, load_3dmm_s=False, load_3dmm_l=True, load_ref=True)
         model = getattr(module_arch, cfg.arch.type)(cfg.arch.args)
         criterion = partial(getattr(module_loss, cfg.loss.type), **cfg.loss.args)
