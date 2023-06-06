@@ -75,7 +75,7 @@ def val(cfg):
         speaker_emotion_list = []
         for batch_idx, (_, _, speaker_emotion, _, _, _, listener_emotion, _, _) in enumerate(tqdm(dataloader)):
 
-            prediction = get_baseline(cfg, baseline, num_pred=2, speaker_emotion=speaker_emotion, listener_emotion=listener_emotion)
+            prediction = get_baseline(cfg, baseline, num_pred=10, speaker_emotion=speaker_emotion, listener_emotion=listener_emotion)
 
             listener_emotion_pred_list.append(prediction)
             listener_emotion_gt_list.append(listener_emotion)
