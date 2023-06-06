@@ -43,12 +43,13 @@ def parse_arg():
     parser.add_argument('--gpu-ids', type=str, default='0', help='gpu ids: e.g. 0  0,1,2, 0,2. use -1 for CPU')
     parser.add_argument('--kl-p', default=0.0002, type=float, help="hyperparameter for kl-loss")
     parser.add_argument('--threads', default=8, type=int, help="num max of threads")
+    parser.add_argument('--binarize', action='store_true', help='binarize AUs output from model')
 
     args = parser.parse_args()
     return args
 
 # Evaluating
-def val(args, model, val_loader, criterion, render):
+def val(args, model, val_loader, criterion, render, binarize=False):
     losses = AverageMeter()
     rec_losses = AverageMeter()
     kld_losses = AverageMeter()
@@ -84,6 +85,9 @@ def val(args, model, val_loader, criterion, render):
                 loss = criterion(**prediction)["loss"].item()
                 losses.update(loss)
             
+            # binarize first 15 positions
+            if binarize:
+                listener_emotion_out[:, :, :15] = torch.round(listener_emotion_out[:, :, :15])
             B = speaker_video_clip.shape[0]
             if (batch_idx % 25) == 0:
                 for bs in range(B):
@@ -115,6 +119,9 @@ def val(args, model, val_loader, criterion, render):
                 else: # BeLFusion
                     listener_emotion_out = prediction["prediction"]
 
+                # binarize first 15 positions
+                if binarize:
+                    listener_emotion_out[:, :, :15] = torch.round(listener_emotion_out[:, :, :15])
                 listener_emotion_pred_list.append(listener_emotion_out.cpu())
         listener_emotion_pred = torch.cat(listener_emotion_pred_list, dim=0)
         all_listener_emotion_pred_list.append(listener_emotion_pred.unsqueeze(1))
@@ -170,7 +177,7 @@ def main(args):
     else:
         render = Render()
 
-    val_loss, rec_loss, kld_loss, FRC, FRD, FRDvs, FRVar, smse, TLCC = val(args, model, val_loader, criterion, render)
+    val_loss, rec_loss, kld_loss, FRC, FRD, FRDvs, FRVar, smse, TLCC = val(args, model, val_loader, criterion, render, binarize=args.binarize)
     print("{}_loss: {:.5f}   {}_rec_loss: {:.5f}  {}_kld_loss: {:.5f} ".format(args.split, val_loss, args.split, rec_loss, args.split, kld_loss))
     print("Metric: | FRC: {:.5f} | FRD: {:.5f} | S-MSE: {:.5f} | FRVar: {:.5f} | FRDvs: {:.5f} | TLCC: {:.5f}".format(FRC, FRD, smse, FRVar, FRDvs, TLCC))
     print("Latex-friendly --> model_name & {:.2f} & {:.2f} & {:.4f} & {:.4f} & {:.4f} & - & {:.2f} \\\\".format( FRC, FRD, smse, FRVar, FRDvs, TLCC))
