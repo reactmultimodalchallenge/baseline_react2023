@@ -147,12 +147,18 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
  <b>Trans-VAE</b>
 - Running the following shell can start training Trans-VAE baseline:
  ```shell
- python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --outdir results/train_offline
+ python train.py --batch-size 4  --gpu-ids 0  -lr 0.00001  --kl-p 0.00001 -e 50  -j 12  --outdir results/train_offline 
+ 
+ 
  ```
  &nbsp; or 
  
   ```shell
- python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --online --outdir results/train_online
+ python train.py --batch-size 4  --gpu-ids 0  -lr 0.00001  --kl-p 0.00001  -e 50  -j 12  --online --outdir results/train_online
+ 
+  python train.py --batch-size 4  --gpu-ids 0  -lr 0.00001  --kl-p 0.00001 -e 50  -j 12  --window-size 16 --outdir/results/train_offline 
+
+ 
  ```
  
  <b>BeLFusion</b>
