@@ -141,11 +141,10 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
 </details>
 
 
-### Baseline: Trans-VAE
-
 <details><summary> <b> Training </b>  </summary>
 <p>
  
+ <b>Trans-VAE</b>
 - Running the following shell can start training Trans-VAE baseline:
  ```shell
  python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --outdir results/train_offline
@@ -155,14 +154,35 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
   ```shell
  python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --online --outdir results/train_online
  ```
+ 
+ <b>BeLFusion</b>
+ - First train the variational autoencoder (VAE):
+```shell
+python train_belfusion.py config=config/1_belfusion_vae.yaml name=All_VAEv2_W50
+```
+ 
+ - Once finished, you will be able to train the offline/online variants of BeLFusion with the desired value for k:
+```shell
+python train_belfusion.py config=config/2_belfusion_ldm.yaml name=<NAME> arch.args.k=<INT (1 or 10)> arch.args.online=<BOOL>
+```
 
  
 </p>
 </details>
 
+<details><summary> <b> Pretrained weights </b>  </summary>
+ If you would rather skip training, download the following checkpoints and put them inside the folder './results'.
+<p>
+ 
+ <b>Trans-VAE</b>: TBA
+ 
+ <b>BeLFusion</b>: [download](https://ubarcelona-my.sharepoint.com/:f:/g/personal/germanbarquero_ub_edu/EvF9K27g_DFPp2MS_8OqkmwBYGzUKs7J3QmkidbRLVSt6Q?e=WCJ2JU)
+ 
+</details>
 
 <details><summary> <b> Validation </b>  </summary>
 <p>
+ Follow this to evaluate Trans-VAE or BeLFusion after training, or downloading the pretrained weights.
  
 - Before validation, run the following script to get the martix (defining appropriate neighbours in val set):
  ```shell
@@ -196,6 +216,7 @@ python -m pytorch_fid  ./results/val_offline/fid/real  ./results/val_offline/fid
 
 <details><summary> <b> Test </b>  </summary>
 <p>
+ Follow this to evaluate Trans-VAE or BeLFusion after training, or downloading the pretrained weights.
  
 - Before testing, run the following script to get the martix (defining appropriate neighbours in test set):
  ```shell
@@ -226,12 +247,6 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
 </details>
 
 
-### Baseline: BelFusion
-
-Find the pretrained models for BeLFusion [here](https://ubarcelona-my.sharepoint.com/:f:/g/personal/germanbarquero_ub_edu/EvF9K27g_DFPp2MS_8OqkmwBYGzUKs7J3QmkidbRLVSt6Q?e=WCJ2JU). Training script will be released soon.
-
-
-### Other baselines: BelFusion
 
 <details><summary> <b> Other baselines </b>  </summary>
 <p>
@@ -256,7 +271,7 @@ Find the pretrained models for BeLFusion [here](https://ubarcelona-my.sharepoint
 
 [2] REACT2023: the first Multi-modal Multiple Appropriate Facial Reaction Generation Challenge
 
-Dataset papers:
+#### Dataset papers:
 
 [3] Palmero, C., Selva, J., Smeureanu, S., Junior, J., Jacques, C. S., Clapés, A., ... & Escalera, S. (2021). Context-aware personality inference in dyadic scenarios: Introducing the udiva dataset. In Proceedings of the IEEE/CVF Winter Conference on Applications of Computer Vision (pp. 1-12).
 
@@ -294,7 +309,6 @@ Dataset papers:
 [7] Luo, Cheng, Siyang Song, Weicheng Xie, Micol Spitale, Linlin Shen, and Hatice Gunes. "ReactFace: Multiple Appropriate Facial Reaction Generation in Dyadic Interactions." arXiv preprint arXiv:2305.15748 (2023).
 
 [8] Xu, Tong, Micol Spitale, Hao Tang, Lu Liu, Hatice Gunes, and Siyang Song. "Reversible Graph Neural Network-based Reaction Distribution Learning for Multiple Appropriate Facial Reactions Generation." arXiv preprint arXiv:2305.15270 (2023).
-
 
 ## 🤝 Acknowledgement
 Thanks to the open source of the following projects:
