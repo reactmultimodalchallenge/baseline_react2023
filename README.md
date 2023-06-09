@@ -4,7 +4,7 @@
 This repository provides baseline methods for the [REACT 2023 Multimodal Challenge](https://sites.google.com/cam.ac.uk/react2023/home)
 
 ### Baseline paper:
-(https://github.com/reactmultimodalchallenge/baseline_react2023/blob/main/REACT2023_Challenge_Baseline_paper.pdf)
+https://github.com/reactmultimodalchallenge/baseline_react2023/blob/main/REACT2023_Challenge_Baseline_paper.pdf
 
 ### Challenge Description
 Human behavioural responses are stimulated by their environment (or context), and people will inductively process the stimulus and modify their interactions to produce an appropriate response. When facing the same stimulus, different facial reactions could be triggered across not only different subjects but also the same subjects under different contexts. The Multimodal Multiple Appropriate Facial Reaction Generation Challenge (REACT 2023) is a satellite event of ACM MM 2023, (Ottawa, Canada, October 2023), which aims at comparison of multimedia processing and machine learning methods for automatic human facial reaction generation under different dyadic interaction scenarios. The goal of the Challenge is to provide the first benchmark test set for multimodal information processing and to bring together the audio, visual and audio-visual affective computing communities, to compare the relative merits of the approaches to automatic appropriate facial reaction generation under well-defined conditions. 
@@ -269,7 +269,7 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
 
 [1] Song, S., Spitale, M., Luo, Y., Bal, B., and Gunes, H. "Multiple Appropriate Facial Reaction Generation in Dyadic Interaction Settings: What, Why and How?." arXiv preprint arXiv:2302.06514 (2023).
 
-[2] REACT2023: the first Multi-modal Multiple Appropriate Facial Reaction Generation Challenge
+[2] Song, S., Spitale, M., Luo, C., Barquero, G., Palmero, C., Escalera, S., Valstar, M., Baur, T., Ringeval, F.,  André, E., and Gunes, H. "REACT2023: the first Multi-modal Multiple Appropriate Facial Reaction Generation Challenge" (2023)
 
 #### Dataset papers:
 
