@@ -141,10 +141,12 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
 </details>
 
 
+### Baseline: Trans-VAE
+
 <details><summary> <b> Training </b>  </summary>
 <p>
  
-- Running the following shell can start training:
+- Running the following shell can start training Trans-VAE baseline:
  ```shell
  python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --outdir results/train_offline
  ```
@@ -153,6 +155,7 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
   ```shell
  python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --online --outdir results/train_online
  ```
+
  
 </p>
 </details>
@@ -212,6 +215,7 @@ python evaluate.py  --resume ./results/train_offline/best_checkpoint.pth  --gpu-
 ```shell
 python evaluate.py  --resume ./results/train_online/best_checkpoint.pth  --gpu-ids 1  --online --outdir results/test_online --split test
 ```
+
  
 - For computing FID (FRRea), run the following script:
 
@@ -220,6 +224,14 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
 ```
 </p>
 </details>
+
+
+### Baseline: BelFusion
+
+Find the pretrained models for BeLFusion [here](https://ubarcelona-my.sharepoint.com/:f:/g/personal/germanbarquero_ub_edu/EvF9K27g_DFPp2MS_8OqkmwBYGzUKs7J3QmkidbRLVSt6Q?e=WCJ2JU). Training script will be released soon.
+
+
+### Other baselines: BelFusion
 
 <details><summary> <b> Other baselines </b>  </summary>
 <p>
@@ -273,7 +285,7 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
 
 ```
 
-If you use or compare to the diffusion-based baseline, please cite the following paper too:
+If you use or compare to the diffusion-based baseline (BeLFusion), please cite the following paper too:
 
 ```BibTeX
 @article{barquero2022belfusion,
