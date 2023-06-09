@@ -1,0 +1,96 @@
+arch:
+    type: LatentMLPMatcher
+    args:
+        diffusion_steps: 10
+        k: 10
+
+        num_hid_channels: 1024
+        num_layers: 10
+
+        emotion_dim: 25
+
+        dropout: 0.0
+        emb_length: 128
+        emb_emotion_path: results/All_VAEv2_W50/checkpoint_999.pth
+        emb_preprocessing: "normalize"
+        freeze_emotion_encoder: true
+
+        window_size: 50
+        seq_len: 750
+        online: false
+
+loss:
+    type: BeLFusionLoss
+    args: 
+        losses: 
+            - L1Loss
+            - MSELoss
+        losses_multipliers:
+            - 10
+            - 10
+        losses_decoded:
+            - false
+            - true
+
+optimizer:
+    lr: 0.0001
+    weight_decay: 5e-4
+
+trainer:
+    mode: predict
+    epochs: 100
+    resume: 
+    out_dir: ./results
+    save_period: 50
+    val_period: 10
+
+dataset:
+    dataset_path: ./data
+    split: train
+
+    img_size: 256
+    crop_size: 224
+    clip_length: 750
+
+    batch_size: 32
+    shuffle: True
+    num_workers: 4
+
+    load_video: false
+    load_audio: false
+    load_emotion: true
+    load_3dmm: true
+
+validation_dataset:
+    dataset_path: ./data
+    split: val
+
+    img_size: 256
+    crop_size: 224
+    clip_length: 750
+
+    batch_size: 32
+    shuffle: False
+    num_workers: 4
+
+    load_video: false
+    load_audio: false
+    load_emotion: true
+    load_3dmm: true
+
+test_dataset:
+    dataset_path: ./data
+    split: test
+
+    img_size: 256
+    crop_size: 224
+    clip_length: 750
+
+    batch_size: 32
+    shuffle: False
+    num_workers: 4
+
+    load_video: false
+    load_audio: false
+    load_emotion: true
+    load_3dmm: true

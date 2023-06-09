@@ -8,6 +8,7 @@ import numpy as np
 import torch.nn.functional as F
 from omegaconf import OmegaConf
 import os
+import yaml
 
 
 def load_config(config_path=None):
@@ -17,6 +18,13 @@ def load_config(config_path=None):
 
 def load_config_from_file(path):
     return OmegaConf.load(path)
+
+def store_config(config):
+    # store config to directory
+    dir = config.trainer.out_dir
+    os.makedirs(dir, exist_ok=True)
+    with open(os.path.join(dir, "config.yaml"), "w") as f:
+        yaml.dump(OmegaConf.to_container(config), f)
 
 
 def torch_img_to_np(img):

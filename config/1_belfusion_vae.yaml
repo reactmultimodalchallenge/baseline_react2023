@@ -1,0 +1,86 @@
+arch:
+    type: AutoencoderRNN_VAE_v2
+    args:
+        emotion_dim: 25
+        coeff_3dmm_dim: 58
+        
+        emb_dims: [64, 64]
+        num_layers: 2
+        hidden_dim: 128
+        z_dim: 128
+        feature_dim: 128
+        rnn_type: 'gru'
+        dropout: 0.0
+
+        window_size: 50
+        seq_len: 750
+
+loss:
+    type: MSELoss_AE_v2
+    args: 
+        w_mse: 1
+        w_kld: 0.00001
+        w_coeff: 1
+
+optimizer:
+    lr: 0.001
+    weight_decay: 5e-4
+
+trainer:
+    mode: autoencode
+    epochs: 1000
+    resume: 
+    out_dir: ./results
+    save_period: 2
+    val_period: 5
+
+dataset:
+    dataset_path: ./data
+    split: train
+
+    img_size: 256
+    crop_size: 224
+    clip_length: 750
+
+    batch_size: 32
+    shuffle: True
+    num_workers: 4
+
+    load_video: false
+    load_audio: false
+    load_emotion: true
+    load_3dmm: true
+
+validation_dataset:
+    dataset_path: ./data/
+    split: val
+
+    img_size: 256
+    crop_size: 224
+    clip_length: 750
+
+    batch_size: 32
+    shuffle: False
+    num_workers: 4
+
+    load_video: false
+    load_audio: false
+    load_emotion: true
+    load_3dmm: true
+
+test_dataset:
+    dataset_path: ./data
+    split: test
+
+    img_size: 256
+    crop_size: 224
+    clip_length: 750
+
+    batch_size: 32
+    shuffle: False
+    num_workers: 4
+
+    load_video: false
+    load_audio: false
+    load_emotion: true
+    load_3dmm: true
