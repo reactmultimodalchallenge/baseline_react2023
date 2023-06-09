@@ -141,6 +141,8 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
 </details>
 
 
+### Baseline: Trans-VAE
+
 <details><summary> <b> Training </b>  </summary>
 <p>
  
@@ -153,8 +155,7 @@ Then, we use a 3D-to-2D tool [PIRender](https://github.com/RenYurui/PIRender) to
   ```shell
  python train.py --batch-size 8  --gpu-ids 0  -lr 0.00002  -e 50  -j 12  --online --outdir results/train_online
  ```
- 
-Find the pretrained models for BeLFusion [here](https://ubarcelona-my.sharepoint.com/:f:/g/personal/germanbarquero_ub_edu/EvF9K27g_DFPp2MS_8OqkmwBYGzUKs7J3QmkidbRLVSt6Q?e=WCJ2JU). Training script will be released soon.
+
  
 </p>
 </details>
@@ -223,6 +224,14 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
 ```
 </p>
 </details>
+
+
+### Baseline: BelFusion
+
+Find the pretrained models for BeLFusion [here](https://ubarcelona-my.sharepoint.com/:f:/g/personal/germanbarquero_ub_edu/EvF9K27g_DFPp2MS_8OqkmwBYGzUKs7J3QmkidbRLVSt6Q?e=WCJ2JU). Training script will be released soon.
+
+
+### Other baselines: BelFusion
 
 <details><summary> <b> Other baselines </b>  </summary>
 <p>
