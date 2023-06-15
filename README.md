@@ -267,9 +267,9 @@ python -m pytorch_fid  ./results/test_offline/fid/real  ./results/test_offline/f
 
 #### Theory paper and baseline paper:
 
-[1] Song, S., Spitale, M., Luo, Y., Bal, B., and Gunes, H. "Multiple Appropriate Facial Reaction Generation in Dyadic Interaction Settings: What, Why and How?." arXiv preprint arXiv:2302.06514 (2023).
+[1] Song, Siyang, Micol Spitale, Yiming Luo, Batuhan Bal, and Hatice Gunes. "Multiple Appropriate Facial Reaction Generation in Dyadic Interaction Settings: What, Why and How?." arXiv preprint arXiv:2302.06514 (2023).
 
-[2] Song, S., Spitale, M., Luo, C., Barquero, G., Palmero, C., Escalera, S., Valstar, M., Baur, T., Ringeval, F.,  André, E., and Gunes, H. "REACT2023: the first Multi-modal Multiple Appropriate Facial Reaction Generation Challenge" (2023)
+[2] Song, Siyang, Micol Spitale, Cheng Luo, German Barquero, Cristina Palmero, Sergio Escalera, Michel Valstar et al. "REACT2023: the first Multi-modal Multiple Appropriate Facial Reaction Generation Challenge." arXiv preprint arXiv:2306.06583 (2023).
 
 #### Dataset papers:
 
