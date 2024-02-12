@@ -61,7 +61,7 @@ def train(args, model, train_loader, optimizer, criterion):
         if torch.cuda.is_available():
             speaker_video_clip, speaker_audio_clip,  listener_emotion, listener_3dmm = \
                 speaker_video_clip.cuda(), speaker_audio_clip.cuda(),  listener_emotion.cuda(), listener_3dmm.cuda()
-
+        optimizer.zero_grad()
         listener_3dmm_out, listener_emotion_out, distribution = model(speaker_video_clip, speaker_audio_clip)
         loss, rec_loss, kld_loss = criterion(listener_emotion, listener_3dmm, listener_emotion_out, listener_3dmm_out,
                                              distribution)
